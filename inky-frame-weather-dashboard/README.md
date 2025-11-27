@@ -41,8 +41,9 @@ LOCATION_NAME = "Location name"
 LATITUDE  = 00.0000 # max 4 decimal places
 LONGITUDE = 00.0000 # max 4 decimal places
 
-# Timezone configuration
+# Time configuration
 UTC_OFFSET_HOURS = 0 # eg. for BST use 1, for CEST use 2
+SLEEP_INTERVAL_MINUTES = 60 # time in minutes between data / display updates
 ```
 
 ### 4. Upload to Inky Frame
