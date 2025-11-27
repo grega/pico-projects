@@ -3,6 +3,48 @@ from picographics import PicoGraphics, DISPLAY_INKY_FRAME_7 as DISPLAY
 import jpegdec
 import urequests
 import json
+import network
+from time import sleep
+
+# Import configuration from secrets.py
+try:
+    from secrets import WIFI_SSID, WIFI_PASSWORD, LOCATION_NAME, LATITUDE, LONGITUDE
+except ImportError:
+    print("ERROR: secrets.py not found!")
+    print("Please create secrets.py with:")
+    print("  WIFI_SSID = 'your-wifi-ssid'")
+    print("  WIFI_PASSWORD = 'your-wifi-password'")
+    print("  LOCATION_NAME = 'Your City'")
+    print("  LATITUDE = 00.0000")
+    print("  LONGITUDE = 00.0000")
+    raise
+
+# Connect to WiFi
+def connect_wifi():
+    """Connect to WiFi network"""
+    wlan = network.WLAN(network.STA_IF)
+    wlan.active(True)
+    
+    if wlan.isconnected():
+        print("Already connected to WiFi")
+        return True
+    
+    print(f"Connecting to WiFi: {WIFI_SSID}")
+    wlan.connect(WIFI_SSID, WIFI_PASSWORD)
+    
+    # Wait for connection (timeout after 30 seconds)
+    max_wait = 30
+    while max_wait > 0:
+        if wlan.isconnected():
+            print(f"Connected to WiFi")
+            print(f"IP: {wlan.ifconfig()[0]}")
+            return True
+        max_wait -= 1
+        sleep(1)
+        print(".", end="")
+    
+    print("\nFailed to connect to WiFi")
+    return False
 
 # Mount SD card
 try:
@@ -39,15 +81,23 @@ GREEN = inky_frame.ORANGE    # ORANGE constant shows GREEN
 graphics.set_pen(WHITE)
 graphics.clear()
 
-# Location configuration
-LAT = 51.3510
-LON = -2.2632
-LOCATION_NAME = "Bradford-on-Avon"
+# Connect to WiFi first
+if not connect_wifi():
+    # Show error on display if WiFi fails
+    graphics.set_pen(BLACK)
+    graphics.set_font("bitmap8")
+    graphics.text("WiFi Connection Failed", 100, 200, scale=3)
+    graphics.text("Check credentials in script", 100, 240, scale=2)
+    graphics.update()
+    # Sleep and try again later
+    print("Sleeping for 5 minutes before retry...")
+    inky_frame.sleep_for(5)
+    # Script will restart after sleep
 
 # Fetch weather data from Yr.no API
 def fetch_weather():
     """Fetch weather data from Yr.no API"""
-    url = f"https://api.met.no/weatherapi/locationforecast/2.0/compact?lat={LAT}&lon={LON}"
+    url = f"https://api.met.no/weatherapi/locationforecast/2.0/compact?lat={LATITUDE}&lon={LONGITUDE}"
     headers = {"User-Agent": "InkyFrameWeather/1.0"}
     
     try:
@@ -234,6 +284,23 @@ graphics.set_pen(BLACK)
 graphics.set_font("bitmap8")
 graphics.text(LOCATION_NAME, 30, 20, scale=3)
 
+# Current date in top right
+from time import localtime
+lt = localtime()
+day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+month_names = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+# Get ordinal suffix for day
+day = lt[2]
+if 10 <= day % 100 <= 20:
+    suffix = "th"
+else:
+    suffix = {1: "st", 2: "nd", 3: "rd"}.get(day % 10, "th")
+
+date_str = f"{day_names[lt[6]]} {day}{suffix} {month_names[lt[1]]}"
+graphics.set_pen(BLACK)
+graphics.text(date_str, 580, 20, scale=2)
+
 # Left section: Icon and main temp
 draw_icon(weather['current_icon'], 30, 70, 100, 100)
 graphics.set_pen(RED)
@@ -304,5 +371,6 @@ print("Updating display...")
 graphics.update()
 print("Done!")
 
-# Put to sleep (optional - saves power)
-# inky_frame.sleep_for(3600)  # Sleep for 1 hour
+# Sleep for 1 hour and wake to refresh
+print("Going to sleep for 1 hour...")
+inky_frame.sleep_for(60)  # Sleep for 60 minutes
