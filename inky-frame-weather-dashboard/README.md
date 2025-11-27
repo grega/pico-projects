@@ -54,17 +54,18 @@ UTC_OFFSET_HOURS = 0 # eg. for BST use 1, for CEST use 2
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │ Location Name                              Tue 24th May          │
-│                                                                   │
-│ [Icon] 13°C   Humidity    Precipitation    Wind       Direction  │
-│                  93%          0 mm         7 m/s         WSW     │
+│                                                                  │
+│ [Icon]    13°C   Humidity  Precipitation  Wind   Direction       │
+│           93%      0 mm        7 m/s      WSW                    │
 ├──────────────────────────────────────────────────────────────────┤
-│ Time  │ Icon │ Temp  │ Precip │ Wind                             │
+│ Time   │ Icon          │ Temp │ Precip │ Wind                    │
 ├──────────────────────────────────────────────────────────────────┤
-│ 00-06 │  🌙  │ 10°C  │ 0.2 mm │ 5 m/s                            │
-│ 06-12 │  ☁   │ 10°C  │ 0.4 mm │ 5 m/s                            │
-│ 12-18 │  ⛅  │ 10°C  │ 0.1 mm │ 6 m/s                            │
-│ 18-00 │  🌙☁ │ 13°C  │ 0.1 mm │ 7 m/s                            │
+│ 00-06 │ [icon]        │ 10°C │ 0.2 mm │ 5 m/s                    │
+│ 06-12 │ [icon]        │ 10°C │ 0.4 mm │ 5 m/s                    │
+│ 12-18 │ [icon]        │ 10°C │ 0.1 mm │ 6 m/s                    │
+│ 18-00 │ [icon]        │ 13°C │ 0.1 mm │ 7 m/s                    │
 └──────────────────────────────────────────────────────────────────┘
+
 ```
 
 ## License
