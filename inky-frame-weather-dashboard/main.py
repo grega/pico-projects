@@ -15,7 +15,7 @@ from time import sleep
 try:
     from secrets import WIFI_SSID, WIFI_PASSWORD, LOCATION_NAME, LATITUDE, LONGITUDE, UTC_OFFSET_HOURS
 except ImportError:
-    print("ERROR: secrets.py not found!")
+    print("ERROR: secrets.py not found")
     raise
 
 def connect_wifi():
@@ -337,7 +337,7 @@ for i, period in enumerate(weather['forecast_periods']):
 
 print("Updating display...")
 graphics.update()
-print("Done!")
+print("Done")
 
 print("Going to sleep for 1 hour...")
 inky_frame.sleep_for(60)
