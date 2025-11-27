@@ -19,26 +19,11 @@ A weather dashboard for the Pimoroni Inky Frame 7.3" E Ink display that fetches 
 
 ## Setup Instructions
 
-### 1. Prepare Weather Icons
-
-Download and convert the Erik Flowers weather icons to JPEG format:
-
-```bash
-git clone https://github.com/erikflowers/weather-icons.git
-
-# convert SVG icons to 50x50 JPEG with white background
-cd weather-icons/svg
-for file in wi-*.svg; do
-  convert "$file" -background white -flatten -resize 50x50 "${file%.svg}.jpg"
-done
-```
-
-### 2. Prepare SD Card
+### 1. Copy weather icons to SD card
 
 1. Format your SD card as FAT32
-2. Create a folder called `weather-icons`
-3. Copy all the `.jpg` icon files into this folder
-4. Insert the SD card into your Inky Frame
+2. Copy the `./weather-icons` directory onto the SD card
+3. Insert the SD card into your Inky Frame
 
 ### 3. Configure
 
@@ -64,21 +49,23 @@ LONGITUDE = 00.0000 # max 4 decimal places
 ## Display Layout
 
 ```
-┌─────────────────────────────────────────────────────┐
-│ Location Name                        Tue 24th May   │
-│                                                      │
-│ [Icon] 10°    Feels like 7°    Precipitation   Wind │
-│                                0 mm             5 m/s│
-├─────────────────────────────────────────────────────┤
-│ Time  │ Icon │ Temp │ Precip │ Wind                 │
-├─────────────────────────────────────────────────────┤
-│ 00-06 │  ☁   │ 10°  │ 0.2 mm │  5                   │
-│ 06-12 │  ☁   │ 10°  │ 0.4 mm │  5                   │
-│ 12-18 │  ☁   │ 10°  │ 0.1 mm │  6                   │
-│ 18-00 │  ⛅  │ 13°  │ 0.1 mm │  7                   │
-└─────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│ Location Name                              Tue 24th May          │
+│                                                                   │
+│ [Icon] 13°C   Humidity    Precipitation    Wind       Direction  │
+│                  93%          0 mm         7 m/s         WSW     │
+├──────────────────────────────────────────────────────────────────┤
+│ Time  │ Icon │ Temp  │ Precip │ Wind                             │
+├──────────────────────────────────────────────────────────────────┤
+│ 00-06 │  🌙  │ 10°C  │ 0.2 mm │ 5 m/s                            │
+│ 06-12 │  ☁   │ 10°C  │ 0.4 mm │ 5 m/s                            │
+│ 12-18 │  ⛅  │ 10°C  │ 0.1 mm │ 6 m/s                            │
+│ 18-00 │  🌙☁ │ 13°C  │ 0.1 mm │ 7 m/s                            │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
 ## License
 
 This project uses data from the Yr.no API, which requires attribution. Make sure to comply with their [Terms of Service](https://developer.yr.no/doc/TermsOfService/).
+
+Weather icons are from [Erik Flowers' Weather Iconscollection](https://github.com/erikflowers/weather-icons).
