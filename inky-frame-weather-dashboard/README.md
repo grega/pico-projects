@@ -32,14 +32,17 @@ Create or edit `secrets.py` on your Inky Frame and add your WiFi and location de
 ```python
 # secrets.py - Configuration file
 
-# WiFi Configuration
+# WiFi configuration
 WIFI_SSID = "your-wifi-ssid"
 WIFI_PASSWORD = "your-wifi-password"
 
-# Location Configuration
+# Location configuration
 LOCATION_NAME = "Location name"
 LATITUDE  = 00.0000 # max 4 decimal places
 LONGITUDE = 00.0000 # max 4 decimal places
+
+# Timezone configuration
+UTC_OFFSET_HOURS = 0 # eg. for BST use 1, for CEST use 2
 ```
 
 ### 4. Upload to Inky Frame

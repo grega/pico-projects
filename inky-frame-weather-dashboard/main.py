@@ -1,22 +1,21 @@
 import inky_frame
 import jpegdec
 import json
+import machine
 import network
+import ntptime
+import os
+import sdcard
+import time
 import urequests
 
 from picographics import PicoGraphics, DISPLAY_INKY_FRAME_7 as DISPLAY
 from time import sleep
 
 try:
-    from secrets import WIFI_SSID, WIFI_PASSWORD, LOCATION_NAME, LATITUDE, LONGITUDE
+    from secrets import WIFI_SSID, WIFI_PASSWORD, LOCATION_NAME, LATITUDE, LONGITUDE, UTC_OFFSET_HOURS
 except ImportError:
     print("ERROR: secrets.py not found!")
-    print("Please create secrets.py with:")
-    print("  WIFI_SSID = 'your-wifi-ssid'")
-    print("  WIFI_PASSWORD = 'your-wifi-password'")
-    print("  LOCATION_NAME = 'Your City'")
-    print("  LATITUDE = 00.0000")
-    print("  LONGITUDE = 00.0000")
     raise
 
 def connect_wifi():
@@ -44,10 +43,6 @@ def connect_wifi():
     return False
 
 try:
-    import os
-    import machine
-    import sdcard
-    
     spi = machine.SPI(0, baudrate=40000000, sck=machine.Pin(18), mosi=machine.Pin(19), miso=machine.Pin(16))
     cs = machine.Pin(22)
     
@@ -271,10 +266,12 @@ graphics.set_pen(BLACK)
 graphics.set_font("bitmap8")
 graphics.text(LOCATION_NAME, 30, 20, scale=3)
 
-from time import localtime
-lt = localtime()
+ntptime.settime()
+lt = time.localtime(time.time() + UTC_OFFSET_HOURS * 3600)
+
 day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-month_names = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+month_names = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
+               "Aug", "Sep", "Oct", "Nov", "Dec"]
 
 day = lt[2]
 if 10 <= day % 100 <= 20:
