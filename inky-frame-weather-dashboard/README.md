@@ -120,7 +120,6 @@ Time       Icon                      Temp    Precip   Wind
 06-12      wi-rain.jpg               10°C    1.6 mm   7 m/s
 12-18      wi-day-cloudy.jpg         8°C     0.0 mm   5 m/s
 ================================================================================
-=======
 ```
 
 ## License
