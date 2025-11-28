@@ -117,11 +117,20 @@ def parse_weather(data, utc_offset_hours):
     # current local time
     lt = time.localtime(time.time() + utc_offset_hours * 3600)
     current_hour = lt[3]
-    current_minute = lt[4]
 
-    # first block: from next full hour to end of current 6-hour segment
-    first_block_start = (current_hour + 1) % 24
-    first_block_end = ((current_hour // 6) + 1) * 6 % 24
+    # current 6-hour block
+    current_block_start = (current_hour // 6) * 6
+    current_block_end = (current_block_start + 6) % 24
+
+    # if we're in the final hour of the block, skip to next block
+    if current_hour == (current_block_end - 1) % 24:
+        first_block_start = current_block_end
+        first_block_end = (current_block_end + 6) % 24
+    else:
+        # first block: from next full hour to end of current 6-hour segment
+        first_block_start = (current_hour + 1) % 24
+        first_block_end = current_block_end
+
     blocks = [(first_block_start, first_block_end)]
 
     # subsequent 6-hour blocks
