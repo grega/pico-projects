@@ -1,29 +1,28 @@
 # Inky Frame Weather Dashboard
 
-A weather dashboard for the Pimoroni Inky Frame 7.3" E Ink display that fetches live weather data from the Yr.no API.
+A weather dashboard for the Pimoroni Inky Frame 7.3" E Ink display that fetches live weather data from the [Yr.no API](https://developer.yr.no/).
+
+![IMG_3832](https://github.com/user-attachments/assets/83189050-6991-4218-a3bb-3c8c90bb6cc9)
+
+***
 
 This is similar to the "card" view that YR provides, eg. https://www.yr.no/en/content/2-2654991/card.html
 
 (the values shown by the card can be used to verify the data shown on the Inky Frame)
 
-See the YR docs for information on getting the location ID (`2-2654991`): https://developer.yr.no/doc/guides/available-widgets/
-
-## Features
-
-- Live weather data from Yr.no (MET Norway) API
-- Current temperature, "feels like" temperature, precipitation, and wind speed
-- 24-hour forecast in 6-hour blocks
-- Weather icons from [Erik Flowers' weather-icons collection](https://github.com/erikflowers/weather-icons)
-- Auto-refresh every hour
-- Low power consumption with deep sleep mode
+See the YR docs on how to generate a card view URL for your location: https://developer.yr.no/doc/guides/available-widgets/
 
 ## Hardware Requirements
 
-- Pimoroni Inky Frame 7.3" (Spectra 6 display)
+- [Pimoroni Inky Frame 7.3"](https://shop.pimoroni.com/products/inky-frame-7-3?variant=40541882056787) (Spectra 6 display)
 - MicroSD card
 - WiFi connection
 
+The case case was sourced from [MakerWorld](https://makerworld.com/en/models/210940-inky-frame-7-3-clean-cover-snap-on-easy-print#profileId-230780) and printed using PLA.
+
 ## Setup Instructions
+
+See Pimoroni's installation guide to get the firmware installed: https://github.com/pimoroni/inky-frame
 
 ### 1. Copy weather icons to SD card
 
@@ -77,7 +76,7 @@ Roughly:
 └──────────────────────────────────────────────────────────────────┘
 ```
 
-## ASCI Output
+## ASCII Output
 
 The code can also be run in a standard Python environment (ie. not on the Inky Frame) to see the weather data printed in ASCII format in the console. 
 
@@ -121,10 +120,11 @@ Time       Icon                      Temp    Precip   Wind
 06-12      wi-rain.jpg               10°C    1.6 mm   7 m/s
 12-18      wi-day-cloudy.jpg         8°C     0.0 mm   5 m/s
 ================================================================================
+=======
 ```
 
 ## License
 
 This project uses data from the Yr.no API, which requires attribution. Make sure to comply with their [Terms of Service](https://developer.yr.no/doc/TermsOfService/).
 
-Weather icons are from [Erik Flowers' Weather Iconscollection](https://github.com/erikflowers/weather-icons).
+Weather icons are from [Erik Flowers' Weather Icons collection](https://github.com/erikflowers/weather-icons).
