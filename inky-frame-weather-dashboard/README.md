@@ -1,23 +1,20 @@
 # Inky Frame Weather Dashboard
 
-A weather dashboard for the Pimoroni Inky Frame 7.3" E Ink display that fetches live weather data from the Yr.no API.
+A weather dashboard for the Pimoroni Inky Frame 7.3" E Ink display that fetches live weather data from the [Yr.no API](https://developer.yr.no/).
 
-## Features
+![IMG_3832](https://github.com/user-attachments/assets/83189050-6991-4218-a3bb-3c8c90bb6cc9)
 
-- Live weather data from Yr.no (MET Norway) API
-- Current temperature, "feels like" temperature, precipitation, and wind speed
-- 24-hour forecast in 6-hour blocks
-- Weather icons from [Erik Flowers' weather-icons collection](https://github.com/erikflowers/weather-icons)
-- Auto-refresh every hour
-- Low power consumption with deep sleep mode
+Case from [MakerWorld](https://makerworld.com/en/models/210940-inky-frame-7-3-clean-cover-snap-on-easy-print#profileId-230780).
 
 ## Hardware Requirements
 
-- Pimoroni Inky Frame 7.3" (Spectra 6 display)
+- [Pimoroni Inky Frame 7.3"](https://shop.pimoroni.com/products/inky-frame-7-3?variant=40541882056787) (Spectra 6 display)
 - MicroSD card
 - WiFi connection
 
 ## Setup Instructions
+
+See Pimoroni's installation guide to get the firmware installed: https://github.com/pimoroni/inky-frame
 
 ### 1. Copy weather icons to SD card
 
@@ -66,11 +63,10 @@ SLEEP_INTERVAL_MINUTES = 60 # time in minutes between data / display updates
 │ 12-18 │ [icon]        │ 10°C │ 0.1 mm │ 6 m/s                    │
 │ 18-00 │ [icon]        │ 13°C │ 0.1 mm │ 7 m/s                    │
 └──────────────────────────────────────────────────────────────────┘
-
 ```
 
 ## License
 
 This project uses data from the Yr.no API, which requires attribution. Make sure to comply with their [Terms of Service](https://developer.yr.no/doc/TermsOfService/).
 
-Weather icons are from [Erik Flowers' Weather Iconscollection](https://github.com/erikflowers/weather-icons).
+Weather icons are from [Erik Flowers' Weather Icons collection](https://github.com/erikflowers/weather-icons).
