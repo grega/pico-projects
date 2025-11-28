@@ -12,6 +12,8 @@ import urequests
 from picographics import PicoGraphics, DISPLAY_INKY_FRAME_7 as DISPLAY
 from time import sleep
 
+from weather_utils import fetch_weather, weather_url, parse_weather, get_icon_filename, wind_direction_to_compass
+
 while True:
     try:
         from secrets import WIFI_SSID, WIFI_PASSWORD, LOCATION_NAME, LATITUDE, LONGITUDE, UTC_OFFSET_HOURS, SLEEP_INTERVAL_MINUTES
@@ -75,161 +77,13 @@ while True:
         graphics.update()
         print("Sleeping for 5 minutes before retry...")
         inky_frame.sleep_for(5)
-
-    def fetch_weather():
-        url = f"https://api.met.no/weatherapi/locationforecast/2.0/compact?lat={LATITUDE}&lon={LONGITUDE}"
-        headers = {"User-Agent": "InkyFrameWeather/1.0"}
-        
+    else:
         try:
-            print(f"Fetching weather from {url}")
-            response = urequests.get(url, headers=headers)
-            data = response.json()
-            response.close()
-            return data
+            print("Syncing time via NTP...")
+            ntptime.settime()
+            print("Time updated successfully.")
         except Exception as e:
-            print(f"Error fetching weather: {e}")
-            return None
-
-    def get_icon_filename(symbol_code):
-        # keep day/night suffix for proper icon selection
-        # remove polartwilight if present
-        base_symbol = symbol_code.replace('_polartwilight', '')
-        
-        icon_map = {
-            # day icons
-            "clearsky_day": "wi-day-sunny",
-            "fair_day": "wi-day-cloudy",
-            "partlycloudy_day": "wi-day-cloudy",
-            
-            # night icons
-            "clearsky_night": "wi-night-clear",
-            "fair_night": "wi-night-alt-cloudy",
-            "partlycloudy_night": "wi-night-alt-cloudy",
-            
-            # weather conditions (usable for day or night)
-            "cloudy": "wi-cloudy",
-            "fog": "wi-fog",
-            "heavyrain": "wi-rain",
-            "heavyrainandthunder": "wi-thunderstorm",
-            "heavyrainshowers_day": "wi-day-showers",
-            "heavyrainshowers_night": "wi-night-alt-showers",
-            "heavysleet": "wi-sleet",
-            "heavysleetandthunder": "wi-sleet",
-            "heavysleetshowers_day": "wi-sleet",
-            "heavysleetshowers_night": "wi-sleet",
-            "heavysnow": "wi-snow",
-            "heavysnowandthunder": "wi-snow",
-            "heavysnowshowers_day": "wi-snow",
-            "heavysnowshowers_night": "wi-snow",
-            "lightrain": "wi-sprinkle",
-            "lightrainandthunder": "wi-storm-showers",
-            "lightrainshowers_day": "wi-day-showers",
-            "lightrainshowers_night": "wi-night-alt-showers",
-            "lightsleet": "wi-sleet",
-            "lightsleetandthunder": "wi-sleet",
-            "lightsleetshowers_day": "wi-sleet",
-            "lightsleetshowers_night": "wi-sleet",
-            "lightsnow": "wi-snow",
-            "lightsnowandthunder": "wi-snow",
-            "lightsnowshowers_day": "wi-snow",
-            "lightsnowshowers_night": "wi-snow",
-            "lightssleetshowersandthunder_day": "wi-sleet",
-            "lightssleetshowersandthunder_night": "wi-sleet",
-            "lightssnowshowersandthunder_day": "wi-snow",
-            "lightssnowshowersandthunder_night": "wi-snow",
-            "rain": "wi-rain",
-            "rainandthunder": "wi-thunderstorm",
-            "rainshowers_day": "wi-day-showers",
-            "rainshowers_night": "wi-night-alt-showers",
-            "sleet": "wi-sleet",
-            "sleetandthunder": "wi-sleet",
-            "sleetshowers_day": "wi-sleet",
-            "sleetshowers_night": "wi-sleet",
-            "snow": "wi-snow",
-            "snowandthunder": "wi-snow",
-            "snowshowers_day": "wi-snow",
-            "snowshowers_night": "wi-snow",
-        }
-        
-        icon_name = icon_map.get(base_symbol, "wi-cloud")
-        return f"/sd/weather-icons/{icon_name}.jpg"
-
-    def wind_direction_to_compass(degrees):
-        directions = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
-                    "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"]
-        index = round(degrees / 22.5) % 16
-        return directions[index]
-
-    def parse_weather(data):
-        if not data or 'properties' not in data:
-            return None
-        
-        timeseries = data['properties']['timeseries']
-        if not timeseries:
-            return None
-        
-        current = timeseries[0]
-        current_data = current['data']['instant']['details']
-        
-        current_symbol = 'cloudy'
-        if 'next_1_hours' in current['data'] and 'summary' in current['data']['next_1_hours']:
-            current_symbol = current['data']['next_1_hours']['summary']['symbol_code']
-        elif 'next_6_hours' in current['data'] and 'summary' in current['data']['next_6_hours']:
-            current_symbol = current['data']['next_6_hours']['summary']['symbol_code']
-        
-        time_blocks = ["00-06", "06-12", "12-18", "18-00"]
-        
-        from time import localtime
-        current_hour = localtime()[3]
-        
-        if current_hour < 6:
-            start_block = 0
-        elif current_hour < 12:
-            start_block = 1
-        elif current_hour < 18:
-            start_block = 2
-        else:
-            start_block = 3
-        
-        forecast_periods = []
-        for block_idx in range(4):
-            actual_block = (start_block + block_idx) % 4
-            time_label = time_blocks[actual_block]
-            
-            entry_idx = min(block_idx * 6, len(timeseries) - 1)
-            entry = timeseries[entry_idx]
-            
-            details = entry['data']['instant']['details']
-            
-            symbol = 'cloudy'
-            if 'next_6_hours' in entry['data'] and 'summary' in entry['data']['next_6_hours']:
-                symbol = entry['data']['next_6_hours']['summary']['symbol_code']
-            elif 'next_1_hours' in entry['data'] and 'summary' in entry['data']['next_1_hours']:
-                symbol = entry['data']['next_1_hours']['summary']['symbol_code']
-            
-            precip = 0
-            if 'next_6_hours' in entry['data'] and 'details' in entry['data']['next_6_hours']:
-                precip = entry['data']['next_6_hours']['details'].get('precipitation_amount', 0)
-            elif 'next_1_hours' in entry['data'] and 'details' in entry['data']['next_1_hours']:
-                precip = entry['data']['next_1_hours']['details'].get('precipitation_amount', 0)
-            
-            forecast_periods.append({
-                "time": time_label,
-                "icon": get_icon_filename(symbol),
-                "temp": f"{round(details.get('air_temperature', 0))}°C",
-                "precip": f"{precip} mm",
-                "wind": f"{round(details.get('wind_speed', 0))} m/s"
-            })
-        
-        return {
-            "current_temp": f"{round(current_data.get('air_temperature', 0))}°C",
-            "current_precip": "0 mm",
-            "current_wind": f"{round(current_data.get('wind_speed', 0))} m/s",
-            "current_wind_dir": wind_direction_to_compass(current_data.get('wind_from_direction', 0)),
-            "current_humidity": f"{round(current_data.get('relative_humidity', 0))}%",
-            "current_icon": get_icon_filename(current_symbol),
-            "forecast_periods": forecast_periods
-        }
+            print(f"Failed to sync NTP time: {e}")
 
     def draw_icon(filename, x, y, width, height):
         try:
@@ -247,15 +101,15 @@ while True:
             graphics.set_pen(RED)
             graphics.circle(x + width//2, y + height//2, min(width, height)//2)
 
-    print("Fetching weather data...")
-    weather_data = fetch_weather()
-    weather = parse_weather(weather_data)
+    print(f"Fetching weather from {weather_url(LATITUDE, LONGITUDE)}")
+    weather_data = fetch_weather(LATITUDE, LONGITUDE)
+    weather = parse_weather(weather_data, UTC_OFFSET_HOURS)
 
     if not weather:
         print("Failed to fetch weather data")
         graphics.set_pen(BLACK)
         graphics.set_font("bitmap8")
-        graphics.text("Weather Data Failed", 150, 200, scale=3)
+        graphics.text("Fetching weather data dailed", 150, 200, scale=3)
         graphics.text("Check your internet connection", 150, 240, scale=2)
         graphics.update()
         print("Sleeping for 10 minutes before retry...")
@@ -267,7 +121,6 @@ while True:
     graphics.set_font("bitmap8")
     graphics.text(LOCATION_NAME, 30, 20, scale=3)
 
-    ntptime.settime()
     lt = time.localtime(time.time() + UTC_OFFSET_HOURS * 3600)
 
     day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
