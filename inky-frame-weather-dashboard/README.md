@@ -18,13 +18,13 @@ See the YR docs on how to generate a card view URL for your location: https://de
 - MicroSD card
 - WiFi connection
 
-The case case was sourced from [MakerWorld](https://makerworld.com/en/models/210940-inky-frame-7-3-clean-cover-snap-on-easy-print#profileId-230780) and printed using PLA.
+The snap-on case was sourced from [MakerWorld](https://makerworld.com/en/models/210940-inky-frame-7-3-clean-cover-snap-on-easy-print#profileId-230780) and printed using PLA.
 
 ## Setup Instructions
 
 See Pimoroni's installation guide to get the firmware installed: https://github.com/pimoroni/inky-frame
 
-In order to run the code locally ie. to test using `ascii.py` (assumes [asdf](https://asdf-vm.com/)):
+In order to run the code locally ie. to test the display output using `ascii.py` (assumes [asdf](https://asdf-vm.com/)):
 
 ```
 asdf install
@@ -41,7 +41,7 @@ pip install -r requirements.txt
 
 ### 3. Configure
 
-Create or edit `secrets.py` on the Inky Frame and add your WiFi and location details:
+Create or edit `secrets.py` on the Inky Frame's Pico and fill in the configuration options:
 
 ```python
 # secrets.py - Configuration file
@@ -74,24 +74,25 @@ ENABLE_AUTO_UPDATE = True # set to True to enable automatic updates from GitHub 
 Roughly:
 
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│ Location Name                              Tue 24th May          │
-│                                                                  │
-│ [Icon]    13°C   Humidity  Precipitation  Wind   Direction       │
-│           93%      0 mm        7 m/s      WSW                    │
-├──────────────────────────────────────────────────────────────────┤
-│ Time   │ Icon          │ Temp │ Precip │ Wind                    │
-├──────────────────────────────────────────────────────────────────┤
-│ 00-06 │ [icon]        │ 10°C │ 0.2 mm │ 5 m/s                    │
-│ 06-12 │ [icon]        │ 10°C │ 0.4 mm │ 5 m/s                    │
-│ 12-18 │ [icon]        │ 10°C │ 0.1 mm │ 6 m/s                    │
-│ 18-00 │ [icon]        │ 13°C │ 0.1 mm │ 7 m/s                    │
-└──────────────────────────────────────────────────────────────────┘
+================================================================================
+Location Name                                                       Sun 30th Nov
+--------------------------------------------------------------------------------
+Temperature: 5°C                    Cloud         Humidity         Wind
+Icon: wi-cloudy.jpg                 100%          86%              4 m/s
+
+                                    Pressure      Precipitation    Direction
+                                    1014 hPa      0.0mm            SSW
+--------------------------------------------------------------------------------
+18-00      wi-rain.jpg               5°C          0.0 mm        4 m/s
+00-06      wi-night-alt-cloudy.jpg   8°C          7.3 mm        8 m/s
+06-12      wi-rain.jpg               10°C         2.9 mm        11 m/s
+12-18      wi-rain.jpg               12°C         6.9 mm        12 m/s
+================================================================================
 ```
 
 ## ASCII Output
 
-The code can also be run in a standard Python environment (ie. not on the Inky Frame) to see the weather data printed in ASCII format in the console. 
+The code can also be run in a standard Python environment (ie. not on the Inky Frame) to see the weather data printed in ASCII format in the console, this is pretty handy for testing without having to plug in the device / wait for the display to refresh.
 
 Create a `secrets.py` file configured with location details:
 
@@ -113,57 +114,57 @@ Then run:
 python ascii.py
 ```
 
-This will output a table to the console with the current weather and forecast data, handy for testing / debugging without the hardware connected (or without waiting for the display to refresh):
-
 ```text
 ================================================================================
 Weather for Bradford-on-Avon
-Fri 28th Nov
+Sun 30th Nov
 --------------------------------------------------------------------------------
-Current Temperature: 9°C
-Current Humidity:    83%
-Current Precip:      0.0 mm
-Current Wind:        6 m/s (SSW)
-Current Icon:        wi-cloudy.jpg
+Temperature:         5°C
+Icon:                wi-night-alt-cloudy.jpg
+
+Cloud:               100%
+Pressure:            1014 hPa
+Humidity:            86%
+Precipitation:       0.0 mm
+Wind:                4 m/s
+Direction:           SSW
 --------------------------------------------------------------------------------
 Time       Icon                      Temp    Precip   Wind
 --------------------------------------------------------------------------------
-23-00      wi-rain.jpg               10°C    2.8 mm   8 m/s
-00-06      wi-rain.jpg               10°C    4.7 mm   8 m/s
-06-12      wi-rain.jpg               10°C    1.6 mm   7 m/s
-12-18      wi-day-cloudy.jpg         8°C     0.0 mm   5 m/s
+19-00      wi-night-alt-cloudy.jpg   5°C     0.0 mm   4 m/s
+00-06      wi-rain.jpg               8°C     7.3 mm   8 m/s
+06-12      wi-rain.jpg               10°C    2.9 mm   11 m/s
+12-18      wi-rain.jpg               12°C    6.9 mm   12 m/s
 ================================================================================
 ```
 
 ## Self-update and fallback
 
-The device can update `main.py` and `weather_utils.py` from GitHub. Auto-updates are disabled by default and can be enabled by setting `ENABLE_AUTO_UPDATE = True` in `secrets.py` (useful when testing or modifying code directly on the device, keep it disabled).
+The device can update `main.py` and `weather_utils.py` from GitHub. Auto-updates are disabled by default and can be enabled by setting `ENABLE_AUTO_UPDATE = True` in `secrets.py` (when testing or modifying code directly on the device be sure to keep it disabled).
 
-To prevent bricking due to broken updates, it uses a **simplified rollback system**:
+To prevent bricking due to broken updates, it uses a rollback system:
 
-1. **Updating files**  
+1. Updating files
    - Each file is backed up as `file.prev` before replacement when updates are fetched from GitHub.
    - Updates happen at the start of each cycle (if `ENABLE_AUTO_UPDATE = True`).
 
-2. **Boot sequence**  
+2. Boot sequence
    - `boot.py` runs first on every boot (before `main.py`)
    - It checks the consecutive failure count
    - If failures >= 3, it automatically rolls back all files to their `.prev` versions **before** `main.py` runs
    - This ensures rollback works even if `main.py` has syntax errors or can't import
 
-3. **Failure tracking**  
+3. Failure tracking
    - After the main loop completes successfully, `mark_boot_success()` resets the failure count to 0.
    - If the main loop fails (exception) or `main.py` can't be imported, `mark_boot_failure()` increments the failure count.
    - The failure count tracks consecutive boot failures.
 
 This means that:
 
-- Rollback happens **before** `main.py` runs, so even completely broken `main.py` files can be recovered
+- Rollback happens **before** `main.py` runs (through `boot.py`), so even completely broken `main.py` files can be recovered
 - After 3 consecutive boot failures, the device automatically rolls back to the previous working version
-- Successful boots reset the failure counter, so temporary issues don't trigger rollback
-- The system is simple: just track consecutive failures, rollback when threshold is reached
 
-The update should occur during each cycle (eg. every hour, when the device wakes from sleep / refreshes), though can be forced by restarting the device.
+The update should occur during each cycle (eg. every hour, when the device wakes from sleep / refreshes), though can be forced by power-cycling the device.
 
 ## License
 
