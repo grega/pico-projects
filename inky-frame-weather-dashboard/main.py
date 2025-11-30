@@ -128,7 +128,7 @@ while True:
         graphics.text(weather['current_precip'], x_pos, 180, scale=3)
 
         graphics.set_pen(BLACK)
-        graphics.text("Wind speed", 660, 80, scale=2)
+        graphics.text("Wind", 660, 80, scale=2)
         graphics.text(weather['current_wind'], 660, 110, scale=3)
 
         graphics.text("Direction", 660, 150, scale=2)
