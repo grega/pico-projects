@@ -1,5 +1,10 @@
-import network
 import time
+
+try:
+    import network
+except ImportError:
+    # network is MicroPython-specific, not available in regular Python
+    network = None
 
 try:
     import urequests as requests
@@ -7,6 +12,10 @@ except ImportError:
     import requests
 
 def connect_wifi(max_wait=30):
+    if network is None:
+        print("Error: network module not available (MicroPython only)")
+        return False
+    
     try:
         from secrets import WIFI_SSID, WIFI_PASSWORD
     except ImportError:
@@ -47,10 +56,9 @@ def fetch_weather(lat, lon):
         # `requests` (Python) is a little different to `urequests` (MicroPython) 
         # for use when testing with non-MicroPython (ie. using the ascii.py script)
         response = requests.get(url, headers=headers)
-        if hasattr(response, "json"):
-            data = response.json()
-        else:
-            data = response.json()
+        data = response.json()
+        # urequests (MicroPython) requires explicit close(), requests (Python) doesn't need it
+        if hasattr(response, "close"):
             response.close()
         return data
     except Exception as e:

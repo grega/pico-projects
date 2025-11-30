@@ -1,52 +1,35 @@
-# logic for updating specified files from GitHub with rollback on failure
-
 import os
 import time
 import urequests
 
-# local imports
 from secrets import WIFI_SSID, WIFI_PASSWORD
+try:
+    from secrets import ENABLE_AUTO_UPDATE
+except ImportError:
+    ENABLE_AUTO_UPDATE = False
 from weather_utils import connect_wifi
 
 GITHUB_BASE_URL = "https://raw.githubusercontent.com/grega/pico-projects/main/inky-frame-weather-dashboard/"
 FILES_TO_UPDATE = ["main.py", "weather_utils.py"]
-BOOT_COUNTER_FILE = "boot_counter.txt"
-MAX_RETRIES = 3
-STABLE_VALUE = 10 # arbirtrary, just needs to be > MAX_RETRIES (stops boot counter from incrementing forever)
-CHECK_INTERVAL = 3600 # seconds between automatic checks
+FAILURE_COUNT_FILE = "failure_count.txt"
 
-def read_boot_counter():
+def read_failure_count():
     try:
-        with open(BOOT_COUNTER_FILE, "r") as f:
+        with open(FAILURE_COUNT_FILE, "r") as f:
             return int(f.read())
     except Exception:
         return 0
 
-def write_boot_counter(value):
-    with open(BOOT_COUNTER_FILE, "w") as f:
-        f.write(str(value))
+def write_failure_count(count):
+    with open(FAILURE_COUNT_FILE, "w") as f:
+        f.write(str(count))
 
 def mark_boot_success():
-    counter = read_boot_counter()
-    if counter < STABLE_VALUE:
-        counter += 1
-        write_boot_counter(counter)
+    write_failure_count(0)
 
 def mark_boot_failure():
-    counter = read_boot_counter()
-    counter += 1
-    write_boot_counter(counter)
-
-def rollback_if_needed():
-    counter = read_boot_counter()
-    if counter > MAX_RETRIES:
-        for file in FILES_TO_UPDATE:
-            prev_file = file + ".prev"
-            if prev_file in os.listdir():
-                os.rename(file, file + ".bad")
-                os.rename(prev_file, file)
-                print(f"Rollback performed for {file}")
-        write_boot_counter(0)
+    count = read_failure_count()
+    write_failure_count(count + 1)
 
 def fetch_file(file):
     url = GITHUB_BASE_URL + file
@@ -57,36 +40,41 @@ def fetch_file(file):
         content = response.text
         response.close()
 
-        # check if file exists
         if file in os.listdir():
             with open(file, "r") as f:
                 existing_content = f.read()
             if existing_content == content:
                 print(f"No changes for {file}")
-                return # skip writing
+                return True
 
-            # remove previous backup if it exists
             prev_file = file + ".prev"
             if prev_file in os.listdir():
                 os.remove(prev_file)
             os.rename(file, prev_file)
-
-        # write new file
         with open(file, "w") as f:
             f.write(content)
 
         print(f"Updated {file} from GitHub")
+        return True
 
     except Exception as e:
         print(f"Error fetching {file}: {e}")
-        mark_boot_failure()
-        rollback_if_needed()
+        return False
 
 def update_all():
-  if connect_wifi():
-      print("WiFi ready")
-      for file in FILES_TO_UPDATE:
-        fetch_file(file)
-        mark_boot_success()
-  else:
-      print("Cannot connect to WiFi")
+    if not ENABLE_AUTO_UPDATE:
+        print("Auto-update is disabled (ENABLE_AUTO_UPDATE = False)")
+        return True
+    
+    if not connect_wifi():
+        print("Cannot connect to WiFi")
+        return False
+    
+    print("WiFi ready")
+    all_succeeded = True
+    
+    for file in FILES_TO_UPDATE:
+        if not fetch_file(file):
+            all_succeeded = False
+    
+    return all_succeeded

@@ -181,4 +181,3 @@ while True:
     except Exception as e:
         print("Boot failure:", e)
         update.mark_boot_failure()
-        update.rollback_if_needed()

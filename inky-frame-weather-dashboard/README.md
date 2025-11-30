@@ -24,6 +24,15 @@ The case case was sourced from [MakerWorld](https://makerworld.com/en/models/210
 
 See Pimoroni's installation guide to get the firmware installed: https://github.com/pimoroni/inky-frame
 
+In order to run the code locally ie. to test using `ascii.py` (assumes [asdf](https://asdf-vm.com/)):
+
+```
+asdf install
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
 ### 1. Copy weather icons to SD card
 
 1. Format the SD card as FAT32
@@ -49,12 +58,16 @@ LONGITUDE = 00.0000 # max 4 decimal places
 # Time configuration
 UTC_OFFSET_HOURS = 0 # eg. for BST use 1, for CEST use 2
 SLEEP_INTERVAL_MINUTES = 60 # time in minutes between data / display updates
+
+# Update configuration
+ENABLE_AUTO_UPDATE = True # set to True to enable automatic updates from GitHub (default: False/disabled)
 ```
 
 ### 4. Upload to Inky Frame
 
-1. Copy the `weather_utils.py` and `main.py` files to the Inky Frame
-2. `main.py` will run automatically on boot
+1. Copy the `boot.py`, `weather_utils.py`, `update.py` and `main.py` files to the Inky Frame
+2. `boot.py` runs first on boot, then `main.py` will run automatically
+3. `update.py` will be used to update the files from GitHub (set `ENABLE_AUTO_UPDATE = False` in `secrets.py` if testing / modifying code on the device itself)
 
 ## Display Layout
 
@@ -124,24 +137,31 @@ Time       Icon                      Temp    Precip   Wind
 
 ## Self-update and fallback
 
-The device can update `main.py` and `weather_utils.py` from GitHub. To prevent bricking due to broken updates, it uses a **boot-counter + rollback** system:
+The device can update `main.py` and `weather_utils.py` from GitHub. Auto-updates are disabled by default and can be enabled by setting `ENABLE_AUTO_UPDATE = True` in `secrets.py` (useful when testing or modifying code directly on the device, keep it disabled).
+
+To prevent bricking due to broken updates, it uses a **simplified rollback system**:
 
 1. **Updating files**  
-   - Each file is backed up as `file.prev` before replacement.
-   - After each successful file update, the boot counter is incremented to track stability.
+   - Each file is backed up as `file.prev` before replacement when updates are fetched from GitHub.
+   - Updates happen at the start of each cycle (if `ENABLE_AUTO_UPDATE = True`).
 
-2. **Boot sequence / rollback**  
-   - If a file update fails, the boot counter is incremented (`mark_boot_failure()`).
-   - If the counter exceeds `MAX_RETRIES` (default 3), the device rolls back each updated file to its `.prev` version and resets the counter.
+2. **Boot sequence**  
+   - `boot.py` runs first on every boot (before `main.py`)
+   - It checks the consecutive failure count
+   - If failures >= 3, it automatically rolls back all files to their `.prev` versions **before** `main.py` runs
+   - This ensures rollback works even if `main.py` has syntax errors or can't import
 
-3. **Marking a version stable**  
-   - After successfully updating a file from GitHub, `mark_boot_success()` increments the counter.
-   - Once the counter reaches `STABLE_VALUE` (default 10), the version is considered stable and further rollbacks are not triggered.
+3. **Failure tracking**  
+   - After the main loop completes successfully, `mark_boot_success()` resets the failure count to 0.
+   - If the main loop fails (exception) or `main.py` can't be imported, `mark_boot_failure()` increments the failure count.
+   - The failure count tracks consecutive boot failures.
 
 This means that:
 
-- Successful updates are auto-confirmed
-- Broken updates are automatically reverted after a few failed boot attempts
+- Rollback happens **before** `main.py` runs, so even completely broken `main.py` files can be recovered
+- After 3 consecutive boot failures, the device automatically rolls back to the previous working version
+- Successful boots reset the failure counter, so temporary issues don't trigger rollback
+- The system is simple: just track consecutive failures, rollback when threshold is reached
 
 The update should occur during each cycle (eg. every hour, when the device wakes from sleep / refreshes), though can be forced by restarting the device.
 
