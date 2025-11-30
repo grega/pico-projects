@@ -51,15 +51,32 @@ def rollback_if_needed():
 def fetch_file(file):
     url = GITHUB_BASE_URL + file
     headers = {"User-Agent": "PicoUpdater/1.0"}
+
     try:
         response = urequests.get(url, headers=headers)
         content = response.text
-        # save current version as backup
+        response.close()
+
+        # check if file exists
         if file in os.listdir():
-            os.rename(file, file + ".prev")
+            with open(file, "r") as f:
+                existing_content = f.read()
+            if existing_content == content:
+                print(f"No changes for {file}")
+                return # skip writing
+
+            # remove previous backup if it exists
+            prev_file = file + ".prev"
+            if prev_file in os.listdir():
+                os.remove(prev_file)
+            os.rename(file, prev_file)
+
+        # write new file
         with open(file, "w") as f:
             f.write(content)
+
         print(f"Updated {file} from GitHub")
+
     except Exception as e:
         print(f"Error fetching {file}: {e}")
         mark_boot_failure()
