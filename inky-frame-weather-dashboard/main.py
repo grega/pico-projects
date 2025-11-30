@@ -118,20 +118,36 @@ while True:
         graphics.set_pen(RED)
         graphics.text(weather['current_temp'], 140, 100, scale=9)
 
+        x_pos = 320
+        graphics.set_pen(BLACK)
+        graphics.text("Cloud", x_pos, 80, scale=2)
+        graphics.set_pen(GREEN)
+        graphics.text(weather['current_cloud'], x_pos, 110, scale=3)
+
+        graphics.set_pen(BLACK)
+        graphics.text("Pressure", x_pos, 150, scale=2)
+        graphics.set_pen(GREEN)
+        graphics.text(weather['current_pressure'], x_pos, 180, scale=3)
+
         x_pos = 480
         graphics.set_pen(BLACK)
         graphics.text("Humidity", x_pos, 80, scale=2)
+        graphics.set_pen(BLUE)
         graphics.text(weather['current_humidity'], x_pos, 110, scale=3)
 
+        graphics.set_pen(BLACK)
         graphics.text("Precipitation", x_pos, 150, scale=2)
         graphics.set_pen(BLUE)
         graphics.text(weather['current_precip'], x_pos, 180, scale=3)
 
         graphics.set_pen(BLACK)
         graphics.text("Wind", 660, 80, scale=2)
+        graphics.set_pen(BLACK)
         graphics.text(weather['current_wind'], 660, 110, scale=3)
 
+        graphics.set_pen(BLACK)
         graphics.text("Direction", 660, 150, scale=2)
+        graphics.set_pen(BLACK)
         graphics.text(weather['current_wind_dir'], 660, 180, scale=3)
 
         graphics.set_pen(BLUE)
@@ -148,11 +164,11 @@ while True:
             
             text_y = row_y + 17
             
-            graphics.set_pen(GREEN)
+            graphics.set_pen(BLACK)
             graphics.text(period["time"], 30, text_y, scale=3)
             
             icon_x = 200
-            icon_y = row_y + 8
+            icon_y = row_y + 2
             draw_icon(period["icon"], icon_x, icon_y, icon_size, icon_size)
             
             graphics.set_pen(RED)

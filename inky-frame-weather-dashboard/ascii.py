@@ -27,14 +27,17 @@ def display_ascii():
         print("Failed to fetch weather data")
         return
 
-    # current weather
-    print(f"Current Temperature: {weather['current_temp']}")
-    print(f"Current Humidity:    {weather['current_humidity']}")
-    print(f"Current Precip:      {weather['current_precip']}")
-    print(f"Current Wind:        {weather['current_wind']} ({weather['current_wind_dir']})")
-    # strip path for icon display
+    # current weather (matches Inky Frame layout: left to right, top to bottom)
+    print(f"Temperature:         {weather['current_temp']}")
     current_icon_name = weather['current_icon'].split("/")[-1]
-    print(f"Current Icon:        {current_icon_name}")
+    print(f"Icon:                {current_icon_name}")
+    print()
+    print(f"Cloud:               {weather['current_cloud']}")
+    print(f"Pressure:            {weather['current_pressure']}")
+    print(f"Humidity:            {weather['current_humidity']}")
+    print(f"Precipitation:       {weather['current_precip']}")
+    print(f"Wind:                {weather['current_wind']}")
+    print(f"Direction:           {weather['current_wind_dir']}")
     print("-"*80)
 
     # upcoming 6-hour blocks

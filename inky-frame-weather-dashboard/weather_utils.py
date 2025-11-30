@@ -130,7 +130,7 @@ def wind_direction_to_compass(degrees):
     return directions[index]
 
 def parse_weather(data, utc_offset_hours):
-    """Parse weather JSON into current + 6-hour blocks for display, aligned like the YR card."""
+    # extract current weather conditions from the first timeseries entry
     if not data or 'properties' not in data:
         return None
 
@@ -141,7 +141,6 @@ def parse_weather(data, utc_offset_hours):
     current = timeseries[0]
     current_data = current['data']['instant']['details']
 
-    # determine current symbol
     current_symbol = 'cloudy'
     if 'next_1_hours' in current['data'] and 'summary' in current['data']['next_1_hours']:
         current_symbol = current['data']['next_1_hours']['summary']['symbol_code']
@@ -152,66 +151,88 @@ def parse_weather(data, utc_offset_hours):
     if 'next_1_hours' in current['data'] and 'details' in current['data']['next_1_hours']:
         current_precip = current['data']['next_1_hours']['details'].get('precipitation_amount', 0)
 
-    # current local time
+    # determine forecast periods: start from current/next hour, then show 4 periods
+    # first period may be partial (<6 hours), subsequent periods are 6-hour blocks
     lt = time.localtime(time.time() + utc_offset_hours * 3600)
     current_hour = lt[3]
-
-    # Determine current 6-hour block
+    current_minute = lt[4]
+    
     current_block_start = (current_hour // 6) * 6
     current_block_end = current_block_start + 6
-
-    # If we're in the final hour of the block, go to next block
-    if current_hour == current_block_end - 1:
-        first_block_start = current_block_end % 24
+    if current_block_end == 24:
+        current_block_end = 0
+    
+    is_last_hour = (current_hour % 6) == 5
+    
+    if is_last_hour:
+        start_hour = (current_hour + 1) % 24
+        if start_hour == current_block_end:
+            current_block_end = (current_block_end + 6) % 24
+    elif current_minute >= 50:
+        start_hour = (current_hour + 1) % 24
     else:
-        first_block_start = current_block_start
+        start_hour = current_hour
 
-    first_block_end = (first_block_start + 6) % 24
-    blocks = [(first_block_start, first_block_end)]
+    periods = []
+    if start_hour != current_block_end:
+        periods.append((start_hour, current_block_end))
+    
+    remaining = 4 - len(periods)
+    for i in range(remaining):
+        block_start = (current_block_end + i * 6) % 24
+        block_end = (block_start + 6) % 24
+        periods.append((block_start, block_end))
 
-    # subsequent 6-hour blocks
-    for i in range(3):
-        start = (first_block_end + i * 6) % 24
-        end = (start + 6) % 24
-        blocks.append((start, end))
-
-    forecast_periods = []
-
-    for start_hr, end_hr in blocks:
-        # find the timeseries entry at the start hour
-        entry = None
+    # find the timeseries entry closest to (at or before) the requested hour
+    def find_entry_for_hour(hour):
+        best_entry = None
+        best_hour = -1
         for e in timeseries:
-            t_str = e['time'].split("T")[1]
-            t_str = t_str.split("+")[0].replace("Z", "")
-            hour = int(t_str.split(":")[0])
-            if hour == start_hr:
-                entry = e
-                break
-        if entry is None:
-            # fallback: use first available entry
+            t_str = e['time'].split("T")[1].split("+")[0].replace("Z", "")
+            entry_hour = int(t_str.split(":")[0])
+            if entry_hour == hour:
+                return e
+            if entry_hour < hour and entry_hour > best_hour:
+                best_hour = entry_hour
+                best_entry = e
+        return best_entry if best_entry else timeseries[0]
+
+    # extract forecast data for each period
+    # for periods <6 hours, scale precipitation proportionally from 1h or 6h data
+    forecast_periods = []
+    for start_hr, end_hr in periods:
+        entry = find_entry_for_hour(start_hr)
+        if not entry:
             entry = timeseries[0]
-
+        
         details = entry['data']['instant']['details']
+        period_hours = (end_hr - start_hr) % 24
+        if period_hours == 0:
+            period_hours = 24
 
-        # symbol code
         symbol = 'cloudy'
-        if 'next_6_hours' in entry['data'] and 'summary' in entry['data']['next_6_hours']:
+        if period_hours >= 6 and 'next_6_hours' in entry['data'] and 'summary' in entry['data']['next_6_hours']:
             symbol = entry['data']['next_6_hours']['summary']['symbol_code']
         elif 'next_1_hours' in entry['data'] and 'summary' in entry['data']['next_1_hours']:
             symbol = entry['data']['next_1_hours']['summary']['symbol_code']
+        elif 'next_6_hours' in entry['data'] and 'summary' in entry['data']['next_6_hours']:
+            symbol = entry['data']['next_6_hours']['summary']['symbol_code']
 
-        # precipitation
         precip = 0
-        if 'next_6_hours' in entry['data'] and 'details' in entry['data']['next_6_hours']:
+        if period_hours >= 6 and 'next_6_hours' in entry['data'] and 'details' in entry['data']['next_6_hours']:
             precip = entry['data']['next_6_hours']['details'].get('precipitation_amount', 0)
         elif 'next_1_hours' in entry['data'] and 'details' in entry['data']['next_1_hours']:
-            precip = entry['data']['next_1_hours']['details'].get('precipitation_amount', 0)
+            precip_1h = entry['data']['next_1_hours']['details'].get('precipitation_amount', 0)
+            precip = precip_1h * period_hours
+        elif 'next_6_hours' in entry['data'] and 'details' in entry['data']['next_6_hours']:
+            precip_6h = entry['data']['next_6_hours']['details'].get('precipitation_amount', 0)
+            precip = (precip_6h / 6) * period_hours
 
         forecast_periods.append({
             "time": f"{start_hr:02}-{end_hr:02}",
             "icon": get_icon_filename(symbol),
             "temp": f"{round(details.get('air_temperature', 0))}°C",
-            "precip": f"{precip} mm",
+            "precip": f"{precip:.1f} mm",
             "wind": f"{round(details.get('wind_speed', 0))} m/s"
         })
 
@@ -221,6 +242,8 @@ def parse_weather(data, utc_offset_hours):
         "current_wind": f"{round(current_data.get('wind_speed', 0))} m/s",
         "current_wind_dir": wind_direction_to_compass(current_data.get('wind_from_direction', 0)),
         "current_humidity": f"{round(current_data.get('relative_humidity', 0))}%",
+        "current_cloud": f"{round(current_data.get('cloud_area_fraction', 0))}%",
+        "current_pressure": f"{round(current_data.get('air_pressure_at_sea_level', 0))} hPa",
         "current_icon": get_icon_filename(current_symbol),
         "forecast_periods": forecast_periods
     }
