@@ -143,6 +143,8 @@ This means that:
 - Successful updates are auto-confirmed
 - Broken updates are automatically reverted after a few failed boot attempts
 
+The update should occur during each cycle (eg. every hour, when the device wakes from sleep / refreshes), though can be forced by restarting the device.
+
 ## License
 
 This project uses data from the Yr.no API, which requires attribution. Make sure to comply with their [Terms of Service](https://developer.yr.no/doc/TermsOfService/).
