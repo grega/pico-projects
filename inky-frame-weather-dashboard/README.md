@@ -122,6 +122,27 @@ Time       Icon                      Temp    Precip   Wind
 ================================================================================
 ```
 
+## Self-update and fallback
+
+The device can update `main.py` and `weather_utils.py` from GitHub. To prevent bricking due to broken updates, it uses a **boot-counter + rollback** system:
+
+1. **Updating files**  
+   - Each file is backed up as `file.prev` before replacement.
+   - After each successful file update, the boot counter is incremented to track stability.
+
+2. **Boot sequence / rollback**  
+   - If a file update fails, the boot counter is incremented (`mark_boot_failure()`).
+   - If the counter exceeds `MAX_RETRIES` (default 3), the device rolls back each updated file to its `.prev` version and resets the counter.
+
+3. **Marking a version stable**  
+   - After successfully updating a file from GitHub, `mark_boot_success()` increments the counter.
+   - Once the counter reaches `STABLE_VALUE` (default 10), the version is considered stable and further rollbacks are not triggered.
+
+This means that:
+
+- Successful updates are auto-confirmed
+- Broken updates are automatically reverted after a few failed boot attempts
+
 ## License
 
 This project uses data from the Yr.no API, which requires attribution. Make sure to comply with their [Terms of Service](https://developer.yr.no/doc/TermsOfService/).

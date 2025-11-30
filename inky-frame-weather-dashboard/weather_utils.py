@@ -1,9 +1,39 @@
+import network
 import time
 
 try:
     import urequests as requests
 except ImportError:
     import requests
+
+def connect_wifi(max_wait=30):
+    try:
+        from secrets import WIFI_SSID, WIFI_PASSWORD
+    except ImportError:
+        print("Error: secrets.py not found")
+        return False
+
+    wlan = network.WLAN(network.STA_IF)
+    wlan.active(True)
+    
+    if wlan.isconnected():
+        print("Already connected to WiFi")
+        return True
+
+    print(f"Connecting to WiFi: {WIFI_SSID}")
+    wlan.connect(WIFI_SSID, WIFI_PASSWORD)
+    
+    while max_wait > 0:
+        if wlan.isconnected():
+            print("Connected to WiFi")
+            print(f"IP: {wlan.ifconfig()[0]}")
+            return True
+        time.sleep(1)
+        max_wait -= 1
+        print(".", end="")
+    
+    print("\nFailed to connect to WiFi")
+    return False
 
 def weather_url(lat, lon):
     # used to print the URL in main.py for debugging
