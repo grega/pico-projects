@@ -247,4 +247,3 @@ def parse_weather(data, utc_offset_hours):
         "current_icon": get_icon_filename(current_symbol),
         "forecast_periods": forecast_periods
     }
-
