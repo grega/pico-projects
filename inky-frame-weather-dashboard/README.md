@@ -17,7 +17,8 @@ See the YR docs on how to generate a card view URL for your location: https://de
 - [Pimoroni Inky Frame 7.3"](https://shop.pimoroni.com/products/inky-frame-7-3?variant=40541882056787) (Spectra 6 display)
 - MicroSD card
 - WiFi connection
-
+- Either a power connector or battery pack (see Pimoroni's [Inky Frame "getting started" page](https://learn.pimoroni.com/article/getting-started-with-inky-frame) for more info)
+  
 The snap-on case was sourced from [MakerWorld](https://makerworld.com/en/models/210940-inky-frame-7-3-clean-cover-snap-on-easy-print#profileId-230780) and printed using PLA.
 
 ## Setup Instructions
@@ -150,21 +151,20 @@ To prevent bricking due to broken updates, it uses a rollback system:
 
 2. Boot sequence
    - `boot.py` runs first on every boot (before `main.py`)
-   - It checks the consecutive failure count
-   - If failures >= 3, it automatically rolls back all files to their `.prev` versions **before** `main.py` runs
+   - It checks the consecutive failure count (written to a file)
+   - If failures >= 3, it automatically rolls back all files to their `.prev` versions before `main.py` runs
    - This ensures rollback works even if `main.py` has syntax errors or can't import
 
 3. Failure tracking
-   - After the main loop completes successfully, `mark_boot_success()` resets the failure count to 0.
-   - If the main loop fails (exception) or `main.py` can't be imported, `mark_boot_failure()` increments the failure count.
-   - The failure count tracks consecutive boot failures.
+   - After the main loop completes successfully, `mark_boot_success()` resets the failure count to 0
+   - If the main loop fails or `main.py` can't be imported, `mark_boot_failure()` increments the failure count
 
 This means that:
 
-- Rollback happens **before** `main.py` runs (through `boot.py`), so even completely broken `main.py` files can be recovered
+- Rollback happens before `main.py` runs (through `boot.py`), so even completely broken `main.py` files can be recovered
 - After 3 consecutive boot failures, the device automatically rolls back to the previous working version
 
-The update should occur during each cycle (eg. every hour, when the device wakes from sleep / refreshes), though can be forced by power-cycling the device.
+The update occurs during each cycle (eg. every hour, when the device wakes from sleep / refreshes), though can be forced by power-cycling the device.
 
 ## License
 
