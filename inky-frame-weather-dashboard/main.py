@@ -112,13 +112,13 @@ while True:
 
         date_str = f"{day_names[lt[6]]} {day}{suffix} {month_names[lt[1]]}"
         graphics.set_pen(BLACK)
-        graphics.text(date_str, 580, 20, scale=3)
+        graphics.text(date_str, 600, 20, scale=3)
 
         draw_icon(weather['current_icon'], 20, 70, 100, 100)
         graphics.set_pen(RED)
         graphics.text(weather['current_temp'], 140, 100, scale=9)
 
-        x_pos = 360
+        x_pos = 350
         graphics.set_pen(BLACK)
         graphics.text("Cloud", x_pos, 80, scale=2)
         graphics.set_pen(GREEN)
@@ -129,7 +129,7 @@ while True:
         graphics.set_pen(GREEN)
         graphics.text(weather['current_pressure'], x_pos, 180, scale=3)
 
-        x_pos = 540
+        x_pos = 510
         graphics.set_pen(BLACK)
         graphics.text("Humidity", x_pos, 80, scale=2)
         graphics.set_pen(BLUE)
@@ -140,7 +140,7 @@ while True:
         graphics.set_pen(BLUE)
         graphics.text(weather['current_precip'], x_pos, 180, scale=3)
 
-        x_pos = 720
+        x_pos = 690
         graphics.set_pen(BLACK)
         graphics.text("Wind", x_pos, 80, scale=2)
         graphics.set_pen(BLACK)
