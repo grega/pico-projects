@@ -118,7 +118,7 @@ while True:
         graphics.set_pen(RED)
         graphics.text(weather['current_temp'], 140, 100, scale=9)
 
-        x_pos = 340
+        x_pos = 360
         graphics.set_pen(BLACK)
         graphics.text("Cloud", x_pos, 80, scale=2)
         graphics.set_pen(GREEN)
@@ -129,7 +129,7 @@ while True:
         graphics.set_pen(GREEN)
         graphics.text(weather['current_pressure'], x_pos, 180, scale=3)
 
-        x_pos = 520
+        x_pos = 540
         graphics.set_pen(BLACK)
         graphics.text("Humidity", x_pos, 80, scale=2)
         graphics.set_pen(BLUE)
@@ -140,7 +140,7 @@ while True:
         graphics.set_pen(BLUE)
         graphics.text(weather['current_precip'], x_pos, 180, scale=3)
 
-        x_pos = 700
+        x_pos = 720
         graphics.set_pen(BLACK)
         graphics.text("Wind", x_pos, 80, scale=2)
         graphics.set_pen(BLACK)
