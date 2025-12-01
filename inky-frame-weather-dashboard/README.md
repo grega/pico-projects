@@ -168,6 +168,6 @@ The update occurs during each cycle (eg. every hour, when the device wakes from 
 
 ## License
 
-This project uses data from the Yr.no API, which requires attribution. Make sure to comply with their [Terms of Service](https://developer.yr.no/doc/TermsOfService/).
+This project uses data from the Yr.no API. Make sure to comply with their [Terms of Service](https://developer.yr.no/doc/TermsOfService/).
 
 Weather icons are from [Erik Flowers' Weather Icons collection](https://github.com/erikflowers/weather-icons).
