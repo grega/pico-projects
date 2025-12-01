@@ -140,15 +140,16 @@ while True:
         graphics.set_pen(BLUE)
         graphics.text(weather['current_precip'], x_pos, 180, scale=3)
 
+        x_pos = 660
         graphics.set_pen(BLACK)
-        graphics.text("Wind", 660, 80, scale=2)
+        graphics.text("Wind", x_pos, 80, scale=2)
         graphics.set_pen(BLACK)
-        graphics.text(weather['current_wind'], 660, 110, scale=3)
+        graphics.text(weather['current_wind'], x_pos, 110, scale=3)
 
         graphics.set_pen(BLACK)
-        graphics.text("Direction", 660, 150, scale=2)
+        graphics.text("Direction", x_pos, 150, scale=2)
         graphics.set_pen(BLACK)
-        graphics.text(weather['current_wind_dir'], 660, 180, scale=3)
+        graphics.text(weather['current_wind_dir'], x_pos, 180, scale=3)
 
         graphics.set_pen(BLUE)
         graphics.rectangle(20, 218, 760, 3)
