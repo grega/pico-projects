@@ -2,7 +2,7 @@
 
 A weather dashboard for the Pimoroni Inky Frame 7.3" E Ink display that fetches live weather data from the [Yr.no API](https://developer.yr.no/).
 
-![IMG_3832](https://github.com/user-attachments/assets/83189050-6991-4218-a3bb-3c8c90bb6cc9)
+![IMG_3843](https://github.com/user-attachments/assets/ca64b632-db8e-420b-842a-a3ba5dbba661)
 
 ***
 
