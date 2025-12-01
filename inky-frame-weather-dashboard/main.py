@@ -173,13 +173,13 @@ while True:
             draw_icon(period["icon"], icon_x, icon_y, icon_size, icon_size)
             
             graphics.set_pen(RED)
-            graphics.text(period['temp'], 360, text_y, scale=3)
+            graphics.text(period['temp'], 350, text_y, scale=3)
             
             graphics.set_pen(BLUE)
-            graphics.text(period["precip"], 520, text_y, scale=3)
+            graphics.text(period["precip"], 510, text_y, scale=3)
             
             graphics.set_pen(BLACK)
-            graphics.text(period["wind"], 680, text_y, scale=3)
+            graphics.text(period["wind"], 690, text_y, scale=3)
             
             row_y += row_height
 
