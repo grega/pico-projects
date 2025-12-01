@@ -36,6 +36,7 @@ def fetch_file(file):
     headers = {"User-Agent": "PicoUpdater/1.0"}
 
     try:
+        print(f"Fetching {url}")
         response = urequests.get(url, headers=headers)
         content = response.text
         response.close()
