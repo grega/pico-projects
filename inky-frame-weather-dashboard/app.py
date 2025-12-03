@@ -171,7 +171,7 @@ while True:
             graphics.set_pen(RED)
             graphics.text(period['temp'], 200, text_y, scale=3)
 
-            icon_x = 350
+            icon_x = 345
             icon_y = row_y + 2
             draw_icon(period["icon"], icon_x, icon_y, icon_size, icon_size)
             
