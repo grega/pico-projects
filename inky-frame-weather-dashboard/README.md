@@ -66,8 +66,8 @@ ENABLE_AUTO_UPDATE = True # set to True to enable automatic updates from GitHub 
 
 ### 4. Upload to Inky Frame
 
-1. Copy the `boot.py`, `weather_utils.py`, `update.py` and `app.py` files to the Inky Frame
-2. `boot.py` runs first on boot, then `app.py` will run automatically
+1. Copy the `main.py`, `weather_utils.py`, `update.py` and `app.py` files to the Inky Frame
+2. `main.py` runs first on boot, then `app.py` will be run automatically
 3. `update.py` will be used to update the files from GitHub (set `ENABLE_AUTO_UPDATE = False` in `secrets.py` if testing / modifying code on the device itself)
 
 ## Display Layout
@@ -150,7 +150,7 @@ To prevent bricking due to broken updates, it uses a rollback system:
    - Updates happen at the start of each cycle (if `ENABLE_AUTO_UPDATE = True`).
 
 2. Boot sequence
-   - `boot.py` runs first on every boot (before `app.py`)
+   - `main.py` runs first on every boot
    - It checks the consecutive failure count (written to a file)
    - If failures >= 3, it automatically rolls back all files to their `.prev` versions before `app.py` runs
    - This ensures rollback works even if `app.py` has syntax errors or can't import
@@ -160,7 +160,7 @@ To prevent bricking due to broken updates, it uses a rollback system:
    - If the main loop fails or `app.py` can't be imported, `mark_boot_failure()` increments the failure count
 This means that:
 
-- Rollback happens before `app.py` runs (through `boot.py`), so even completely broken `app.py` files can be recovered
+- Rollback happens before `app.py` runs (through `main.py`), so even completely broken `app.py` files can be recovered
 - After 3 consecutive boot failures, the device automatically rolls back to the previous working version
 
 The update occurs during each cycle (eg. every hour, when the device wakes from sleep / refreshes), though can be forced by power-cycling the device.
