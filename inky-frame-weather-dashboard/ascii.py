@@ -41,13 +41,12 @@ def display_ascii():
     print("-"*80)
 
     # upcoming 6-hour blocks
-    print(f"{'Time':<10} {'Icon':<25} {'Temp':<7} {'Precip':<8} {'Wind'}")
+    print(f"{'Time':<10} {'Temp':<7} {'Icon':<25} {'Precip':<8} {'Wind'}")
     print("-"*80)
     for period in weather['forecast_periods']:
         icon_name = period['icon'].split("/")[-1]  # remove path
-        print(f"{period['time']:<10} {icon_name:<25} {period['temp']:<7} {period['precip']:<8} {period['wind']}")
+        print(f"{period['time']:<10} {period['temp']:<7} {icon_name:<25} {period['precip']:<8} {period['wind']}")
     print("="*80)
-
 
 if __name__ == "__main__":
     display_ascii()

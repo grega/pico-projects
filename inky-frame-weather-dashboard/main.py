@@ -167,13 +167,13 @@ while True:
             
             graphics.set_pen(BLACK)
             graphics.text(period["time"], 30, text_y, scale=3)
-            
-            icon_x = 200
+
+            graphics.set_pen(RED)
+            graphics.text(period['temp'], 200, text_y, scale=3)
+
+            icon_x = 350
             icon_y = row_y + 2
             draw_icon(period["icon"], icon_x, icon_y, icon_size, icon_size)
-            
-            graphics.set_pen(RED)
-            graphics.text(period['temp'], 350, text_y, scale=3)
             
             graphics.set_pen(BLUE)
             graphics.text(period["precip"], 510, text_y, scale=3)
