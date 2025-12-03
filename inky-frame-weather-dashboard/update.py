@@ -10,7 +10,7 @@ except ImportError:
 from weather_utils import connect_wifi
 
 GITHUB_BASE_URL = "https://raw.githubusercontent.com/grega/pico-projects/main/inky-frame-weather-dashboard/"
-FILES_TO_UPDATE = ["main.py", "weather_utils.py"]
+FILES_TO_UPDATE = ["app.py", "weather_utils.py"]
 FAILURE_COUNT_FILE = "failure_count.txt"
 
 def read_failure_count():

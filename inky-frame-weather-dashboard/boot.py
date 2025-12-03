@@ -1,6 +1,6 @@
 import os
 
-FILES_TO_UPDATE = ["main.py", "weather_utils.py"]
+FILES_TO_UPDATE = ["app.py", "weather_utils.py"]
 FAILURE_COUNT_FILE = "failure_count.txt"
 MAX_FAILURES = 3
 
@@ -38,13 +38,13 @@ else:
     print(f"Boot failure count: {failure_count}/{MAX_FAILURES}")
 
 try:
-    import main
+    import app
 except SyntaxError as e:
-    print(f"Syntax error in main.py: {e}")
+    print(f"Syntax error in app.py: {e}")
     write_failure_count(failure_count + 1)
     raise
 except Exception as e:
-    print(f"Failed to import main.py: {e}")
+    print(f"Failed to import app.py: {e}")
     write_failure_count(failure_count + 1)
     raise
 
