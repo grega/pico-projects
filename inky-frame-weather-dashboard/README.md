@@ -2,7 +2,7 @@
 
 A weather dashboard for the Pimoroni Inky Frame 7.3" E Ink display that fetches live weather data from the [Yr.no API](https://developer.yr.no/).
 
-![IMG_3844](https://github.com/user-attachments/assets/b6ec5e6d-36a9-44ef-9ded-df31fe050760)
+![DSCF3305](https://github.com/user-attachments/assets/48a00da3-b11b-46da-b9d3-e65492da8501)
 
 ***
 
@@ -96,7 +96,7 @@ python ascii.py
 
 ```text
 ================================================================================
-Weather for Bradford-on-Avon
+Weather for Location-Name
 Thu 4th Dec
 --------------------------------------------------------------------------------
 Temperature:         7°C
