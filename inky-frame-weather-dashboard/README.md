@@ -70,30 +70,9 @@ ENABLE_AUTO_UPDATE = True # set to True to enable automatic updates from GitHub 
 2. `main.py` runs first on boot, then `app.py` will be run automatically
 3. `update.py` will be used to update the files from GitHub (set `ENABLE_AUTO_UPDATE = False` in `secrets.py` if testing / modifying code on the device itself)
 
-## Display Layout
-
-Roughly:
-
-```
-================================================================================
-Location Name                                                       Sun 30th Nov
---------------------------------------------------------------------------------
-Temperature: 5°C                    Cloud         Humidity         Wind
-Icon: wi-cloudy.jpg                 100%          86%              4 m/s
-
-                                    Pressure      Precipitation    Direction
-                                    1014 hPa      0.0mm            SSW
---------------------------------------------------------------------------------
-18-00      wi-rain.jpg               5°C          0.0 mm        4 m/s
-00-06      wi-night-alt-cloudy.jpg   8°C          7.3 mm        8 m/s
-06-12      wi-rain.jpg               10°C         2.9 mm        11 m/s
-12-18      wi-rain.jpg               12°C         6.9 mm        12 m/s
-================================================================================
-```
-
 ## ASCII Output
 
-The code can also be run in a standard Python environment (ie. not on the Inky Frame) to see the weather data printed in ASCII format in the console, this is pretty handy for testing without having to plug in the device / wait for the display to refresh.
+The code can also be run in a standard Python environment (ie. not on the Inky Frame) to see the weather data printed in ASCII format in the console, this is pretty handy for testing without having to plug in the device / wait for the display to refresh for each change.
 
 Create a `secrets.py` file configured with location details:
 
@@ -118,24 +97,24 @@ python ascii.py
 ```text
 ================================================================================
 Weather for Bradford-on-Avon
-Sun 30th Nov
+Thu 4th Dec
 --------------------------------------------------------------------------------
-Temperature:         5°C
-Icon:                wi-night-alt-cloudy.jpg
+Temperature:         7°C
+Icon:                wi-cloudy.jpg
 
 Cloud:               100%
-Pressure:            1014 hPa
-Humidity:            86%
+Pressure:            996 hPa
+Humidity:            84%
 Precipitation:       0.0 mm
-Wind:                4 m/s
-Direction:           SSW
+Wind:                6 m/s
+Direction:           WSW
 --------------------------------------------------------------------------------
-Time       Icon                      Temp    Precip   Wind
+Time       Temp    Icon                      Precip   Wind
 --------------------------------------------------------------------------------
-19-00      wi-night-alt-cloudy.jpg   5°C     0.0 mm   4 m/s
-00-06      wi-rain.jpg               8°C     7.3 mm   8 m/s
-06-12      wi-rain.jpg               10°C    2.9 mm   11 m/s
-12-18      wi-rain.jpg               12°C    6.9 mm   12 m/s
+13-18      8°C     wi-cloudy.jpg             0.0 mm   6 m/s
+18-00      4°C     wi-night-clear.jpg        0.0 mm   4 m/s
+00-06      2°C     wi-night-alt-cloudy.jpg   0.0 mm   3 m/s
+06-12      2°C     wi-cloudy.jpg             0.1 mm   3 m/s
 ================================================================================
 ```
 
