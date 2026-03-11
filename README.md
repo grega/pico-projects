@@ -11,3 +11,9 @@ A weather dashboard using a [Pimoroni Inky Frame 7.3"](https://shop.pimoroni.com
 ![DSCF3305](https://github.com/user-attachments/assets/02e0c433-6d34-487f-947a-58d30e89eed9)
 
 With a nifty snap-on frame / cover from [MakerWorld](https://makerworld.com/en/models/210940-inky-frame-7-3-clean-cover-snap-on-easy-print#profileId-230780)
+
+## Enviro sensors
+
+[Link to project](./enviro-sensors)
+
+Reading data from [Pimoroni Enviro sensors](https://github.com/pimoroni/enviro) (Pico W), storing it locally, and also sending it over HTTP.
