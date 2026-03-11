@@ -137,6 +137,7 @@ To prevent bricking due to broken updates, it uses a rollback system:
 3. Failure tracking
    - After the main loop completes successfully, `mark_boot_success()` resets the failure count to 0
    - If the main loop fails or `app.py` can't be imported, `mark_boot_failure()` increments the failure count
+
 This means that:
 
 - Rollback happens before `app.py` runs (through `main.py`), so even completely broken `app.py` files can be recovered
