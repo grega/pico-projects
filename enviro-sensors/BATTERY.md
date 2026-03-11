@@ -14,6 +14,8 @@ Assuming `reading_frequency = 15` minutes, `upload_frequency = 12` readings (~3 
 
 **~8–9 mAh/day → ~4–5 months**
 
+The same should apply to the Weather unit too assuming it doesn't have external sensors connected.
+
 ## Urban
 
 Assuming `reading_frequency = 15` minutes, `upload_frequency = 12` readings (~3 hour upload cycle).
