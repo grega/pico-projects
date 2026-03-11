@@ -1,5 +1,5 @@
 // Cloudflare Worker script to handle JSON payloads and store them in R2
-// Requres an R2 bucket binding named `enviro_r2`
+// Requires an R2 bucket binding named `enviro_r2`
 addEventListener('fetch', event => {
   event.respondWith(handleRequest(event.request))
 })
