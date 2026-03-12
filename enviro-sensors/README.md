@@ -2,6 +2,8 @@
 
 Standalone MicroPython scripts for [Pimoroni Enviro](https://github.com/pimoroni/enviro) boards. Replaces the stock `enviro` library with a unified entrypoint (`main.py`) that loads board-specific sensor code based on `config.model`. Keeps the same Pimoroni UF2 dependency for sensor drivers.
 
+The generated sensor data is stored locally and uploaded periodically. Once uploaded, the JSON can be processed by `./data-vis` in order to render some simple HTML charts.
+
 ## Supported boards
 
 | Board | Module | Sensors |
