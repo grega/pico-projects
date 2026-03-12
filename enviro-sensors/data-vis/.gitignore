@@ -1,0 +1,5 @@
+# Downloaded sensor reading directories (nickname-uid/)
+*-*-*/
+
+# Aggregated data produced by build_data.py
+data.json
