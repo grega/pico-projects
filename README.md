@@ -17,3 +17,4 @@ With a nifty snap-on frame / cover from [MakerWorld](https://makerworld.com/en/m
 [Link to project](./enviro-sensors)
 
 Reading data from [Pimoroni Enviro sensors](https://github.com/pimoroni/enviro) (Pico W), storing it locally, and also sending it over HTTP.
+
