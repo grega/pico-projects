@@ -52,6 +52,10 @@ Each cached/uploaded JSON payload includes:
 - `power_mode` (`usb` or `batt`)
 - `free_space` (current filesystem free space percentage)
 
+### Worker and Storage
+
+Create a [Cloudflare Worker](https://workers.cloudflare.com/) using the content of `worker.js`, bind the Worker to an R2 bucket (setting the variable name `enviro_r2` to the name of the bucket). The `upload_url` value in `config.py` should be the Worker's public URL (optionally, add HTTP auth to the Worker, and add the credentials to `config.py`).
+
 ## Configuration
 
 All settings live in `config.py`:
@@ -88,3 +92,4 @@ All settings live in `config.py`:
 
 - Pimoroni custom MicroPython UF2 (provides `breakout_bme68x`, `breakout_bme280`, `breakout_bh1745`, `breakout_ltr559`, `pimoroni_i2c`, `pcf85063a`)
 - Pico W with Enviro Indoor, Weather, or Urban board
+- Cloudflare Worker with an R2 binding
