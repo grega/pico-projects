@@ -18,3 +18,6 @@ With a nifty snap-on frame / cover from [MakerWorld](https://makerworld.com/en/m
 
 Reading data from [Pimoroni Enviro sensors](https://github.com/pimoroni/enviro) (Pico W), storing it locally, and also sending it over HTTP.
 
+The resulting data can then be plotted, eg. using Chart.js:
+
+![enviro-charts](https://github.com/user-attachments/assets/6b412195-6f01-452f-bc96-3a585c4f2233)
