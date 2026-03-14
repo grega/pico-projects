@@ -12,7 +12,7 @@ The generated sensor data is stored locally and uploaded periodically. Once uplo
 | **Weather** | `board_weather.py` | BME280 (temp, humidity, pressure), LTR-559 (light), wind vane, anemometer, rain gauge |
 | **Urban** | `board_urban.py` | BME280 (temp, humidity, pressure), PMS5003I (PM1, PM2.5, PM10), MEMS microphone (noise) |
 
-Set `model` in `config.py` to `"indoor"`, `"weather"`, or `"urban"` — no other code changes needed.
+Set `model` in `config.py` to `"indoor"`, `"weather"`, or `"urban"`.
 
 ## Enviro firmware
 
@@ -28,18 +28,18 @@ Once the device has been flashed, connect to it via USB and remove *all* default
 
 Each script runs a loop:
 
-1. **Clock sync** — fetches time from `pool.ntp.org` via NTP, writes to the PCF85063A RTC. Re-syncs every `resync_frequency` hours.
-2. **Read sensors** — takes a single reading from all onboard sensors. USB temperature compensation is applied when running on USB power (adjusts humidity accordingly).
-3. **Save locally** — appends a CSV row to `readings/<date>.csv`. Column headings stored once in `readings/columns.txt`.
-4. **Cache for upload** — writes a JSON file to `uploads/` containing the reading, device nickname, model, UID, current power mode (`usb`/`batt`), and current free disk percentage.
-5. **Upload** — when cached file count reaches `upload_frequency`, connects to WiFi and POSTs each JSON to `upload_url`. Failed uploads are retried next cycle.
-6. **Sleep** — on battery: sets an RTC alarm and powers off (board re-powers on alarm). On USB: `time.sleep()` until the next reading.
+1. **Clock sync** — fetches time from `pool.ntp.org` via NTP, writes to the PCF85063A RTC. Re-syncs every `resync_frequency` hours
+2. **Read sensors** — takes a single reading from all onboard sensors. USB temperature compensation is applied when running on USB power
+3. **Save locally** — appends a CSV row to `readings/<date>.csv`. Column headings stored once in `readings/columns.txt`
+4. **Cache for upload** — writes a JSON file to `uploads/` containing the reading, device nickname, model, UID, current power mode (`usb`/`batt`), and current free disk percentage
+5. **Upload** — when cached file count reaches `upload_frequency`, connects to WiFi and POSTs each JSON to `upload_url`. Failed uploads are retried next cycle
+6. **Sleep** — on battery: sets an RTC alarm and powers off (board re-powers on alarm). On USB: `time.sleep()` until the next reading
 
 ## Power management
 
-- **VSYS_EN latch** — the power rail is latched (`Pin(2, Pin.OUT, value=True)`) as the very first action on boot, before any imports or delays. On battery wake from an RTC alarm, a hold capacitor keeps the board alive only briefly — if the latch happens too late, the board powers off before the script can run.
-- **Dynamic `vbus_present`** — the USB power pin is read via a cached `Pin` object at the start of every loop cycle, so the device switches between USB and battery behaviour dynamically — including correct sleep mode and temperature compensation.
-- **I2C bus reset** — 16 SCL toggles run at startup to recover from stuck transactions after an unclean reset (e.g. USB disconnect mid-operation).
+- **VSYS_EN latch** — the power rail is latched (`Pin(2, Pin.OUT, value=True)`) as the very first action on boot, before any imports or delays. On battery wake from an RTC alarm, a hold capacitor keeps the board alive only briefly — if the latch happens too late, the board powers off before the script can run
+- **Dynamic `vbus_present`** — the USB power pin is read via a cached `Pin` object at the start of every loop cycle, so the device switches between USB and battery behaviour dynamically — including correct sleep mode and temperature compensation
+- **I2C bus reset** — 16 SCL toggles run at startup to recover from stuck transactions after an unclean reset (e.g. USB disconnect mid-operation)
 
 ## Disk space management
 
