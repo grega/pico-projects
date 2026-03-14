@@ -16,7 +16,7 @@ Set `model` in `config.py` to `"indoor"`, `"weather"`, or `"urban"` — no other
 
 ## Enviro firmware
 
-Tested with version `0.2.0` of the Pimoroni firmware (likely to work fine with later verions).
+Tested with version `0.2.0` of the Pimoroni firmware (likely to work fine with later versions).
 
 Follow the guide here: https://github.com/pimoroni/enviro/blob/main/documentation/upgrading-firmware.md
 
