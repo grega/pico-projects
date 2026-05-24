@@ -8,15 +8,11 @@ import os
 import sdcard
 import time
 
-import inky_frame
-import jpegdec
-from picographics import PicoGraphics, DISPLAY_INKY_FRAME_7 as DISPLAY
-
 import ascii
 import dashboard
+import screen
 import webserver
 from config import LOCATION_NAME, LATITUDE, LONGITUDE, UTC_OFFSET_HOURS, SLEEP_INTERVAL_MINUTES
-from secrets import WIFI_SSID, WIFI_PASSWORD
 from weather_utils import connect_wifi, fetch_weather, weather_url, parse_weather
 
 # ---------------------------------------------------------------------------
@@ -73,38 +69,10 @@ _reboot_requested = False
 REFRESH_INTERVAL_MS = SLEEP_INTERVAL_MINUTES * 60 * 1000
 POLL_INTERVAL_MS = 100
 
-# ---------------------------------------------------------------------------
-# Display setup
-# ---------------------------------------------------------------------------
-
-graphics = PicoGraphics(display=DISPLAY)
-jpeg = jpegdec.JPEG(graphics)
-
-# Spectra 6 colour mappings (display reports different ordinals than the names).
-WHITE = inky_frame.WHITE
-BLACK = inky_frame.BLACK
-YELLOW = inky_frame.GREEN
-RED = inky_frame.BLUE
-BLUE = inky_frame.YELLOW
-GREEN = inky_frame.ORANGE
-
-
-def _draw_message(lines, body_colour=BLACK):
-    graphics.set_pen(WHITE)
-    graphics.clear()
-    graphics.set_font("bitmap8")
-    y = 200
-    for i, (text, scale) in enumerate(lines):
-        graphics.set_pen(body_colour if i == 0 else BLACK)
-        graphics.text(text, 100, y, scale=scale)
-        y += 40 * scale // 2 + 20
-    graphics.update()
-
 
 # ---------------------------------------------------------------------------
 # Status snapshot (shared by /status JSON and dashboard HTML)
 # ---------------------------------------------------------------------------
-
 
 def _local_time_string():
     try:
@@ -168,7 +136,6 @@ def _collect_status():
 # ---------------------------------------------------------------------------
 # Route handlers
 # ---------------------------------------------------------------------------
-
 
 def _is_safe_upload_target(name):
     if not name or not name.endswith(".py"):
@@ -251,9 +218,8 @@ def _poll_webserver():
 
 
 # ---------------------------------------------------------------------------
-# Weather rendering (was app.py)
+# Weather fetch + render
 # ---------------------------------------------------------------------------
-
 
 def _mount_sd():
     try:
@@ -267,22 +233,6 @@ def _mount_sd():
         print(f"Failed to mount SD card: {e}")
 
 
-def _draw_icon(filename, x, y, width, height):
-    try:
-        jpeg.open_file(filename)
-        if width <= 35:
-            jpeg.decode(x, y, jpegdec.JPEG_SCALE_EIGHTH)
-        elif width <= 60:
-            jpeg.decode(x, y, jpegdec.JPEG_SCALE_QUARTER)
-        elif width <= 120:
-            jpeg.decode(x, y, jpegdec.JPEG_SCALE_HALF)
-        else:
-            jpeg.decode(x, y, jpegdec.JPEG_SCALE_FULL)
-    except Exception:
-        graphics.set_pen(RED)
-        graphics.circle(x + width // 2, y + height // 2, min(width, height) // 2)
-
-
 def _render_weather():
     """Fetch + draw the weather screen. Updates _last_fetch_* globals."""
     global _last_fetch_ticks_ms, _last_fetch_ok, _last_fetch_error, _last_weather
@@ -290,117 +240,22 @@ def _render_weather():
     _last_fetch_ticks_ms = time.ticks_ms()
 
     print(f"Fetching weather from {weather_url(LATITUDE, LONGITUDE)}")
-    weather_data = fetch_weather(LATITUDE, LONGITUDE)
-    weather = parse_weather(weather_data, UTC_OFFSET_HOURS)
+    weather = parse_weather(fetch_weather(LATITUDE, LONGITUDE), UTC_OFFSET_HOURS)
 
     if not weather:
         _last_fetch_ok = False
         _last_fetch_error = "weather fetch/parse failed"
         print("Failed to fetch weather data")
-        graphics.set_pen(WHITE)
-        graphics.clear()
-        graphics.set_pen(BLACK)
-        graphics.set_font("bitmap8")
-        graphics.text("Fetching weather data failed", 150, 200, scale=3)
-        graphics.text("Check your internet connection", 150, 240, scale=2)
-        graphics.update()
+        screen.render_error("Fetching weather data failed",
+                            "Check your internet connection")
         return
 
     _last_fetch_ok = True
     _last_fetch_error = None
     _last_weather = weather
 
-    graphics.set_pen(WHITE)
-    graphics.clear()
-
-    graphics.set_pen(BLUE)
-    graphics.rectangle(15, 15, 6, 50)
-    graphics.set_pen(BLACK)
-    graphics.set_font("bitmap8")
-    graphics.text(LOCATION_NAME, 30, 20, scale=3)
-
-    lt = time.localtime(time.time() + UTC_OFFSET_HOURS * 3600)
-    day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-    month_names = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
-                   "Aug", "Sep", "Oct", "Nov", "Dec"]
-    day = lt[2]
-    if 10 <= day % 100 <= 20:
-        suffix = "th"
-    else:
-        suffix = {1: "st", 2: "nd", 3: "rd"}.get(day % 10, "th")
-    date_str = f"{day_names[lt[6]]} {day}{suffix} {month_names[lt[1]]}"
-    graphics.set_pen(BLACK)
-    graphics.text(date_str, 600, 20, scale=3)
-
-    _draw_icon(weather["current_icon"], 20, 70, 100, 100)
-    graphics.set_pen(RED)
-    graphics.text(weather["current_temp"], 140, 100, scale=9)
-
-    x_pos = 350
-    graphics.set_pen(BLACK)
-    graphics.text("Cloud", x_pos, 80, scale=2)
-    graphics.set_pen(GREEN)
-    graphics.text(weather["current_cloud"], x_pos, 110, scale=3)
-
-    graphics.set_pen(BLACK)
-    graphics.text("Pressure", x_pos, 150, scale=2)
-    graphics.set_pen(GREEN)
-    graphics.text(weather["current_pressure"], x_pos, 180, scale=3)
-
-    x_pos = 510
-    graphics.set_pen(BLACK)
-    graphics.text("Humidity", x_pos, 80, scale=2)
-    graphics.set_pen(BLUE)
-    graphics.text(weather["current_humidity"], x_pos, 110, scale=3)
-
-    graphics.set_pen(BLACK)
-    graphics.text("Precipitation", x_pos, 150, scale=2)
-    graphics.set_pen(BLUE)
-    graphics.text(weather["current_precip"], x_pos, 180, scale=3)
-
-    x_pos = 690
-    graphics.set_pen(BLACK)
-    graphics.text("Wind", x_pos, 80, scale=2)
-    graphics.set_pen(BLACK)
-    graphics.text(weather["current_wind"], x_pos, 110, scale=3)
-
-    graphics.set_pen(BLACK)
-    graphics.text("Direction", x_pos, 150, scale=2)
-    graphics.set_pen(BLACK)
-    graphics.text(weather["current_wind_dir"], x_pos, 180, scale=3)
-
-    graphics.set_pen(BLUE)
-    graphics.rectangle(20, 218, 760, 3)
-
-    row_y = 240
-    row_height = 55
-    icon_size = 40
-
-    for i, period in enumerate(weather["forecast_periods"]):
-        if i > 0:
-            graphics.set_pen(BLUE)
-            graphics.line(20, row_y, 780, row_y)
-
-        text_y = row_y + 17
-
-        graphics.set_pen(BLACK)
-        graphics.text(period["time"], 30, text_y, scale=3)
-
-        graphics.set_pen(RED)
-        graphics.text(period["temp"], 200, text_y, scale=3)
-
-        _draw_icon(period["icon"], 345, row_y + 2, icon_size, icon_size)
-
-        graphics.set_pen(BLUE)
-        graphics.text(period["precip"], 510, text_y, scale=3)
-
-        graphics.set_pen(BLACK)
-        graphics.text(period["wind"], 690, text_y, scale=3)
-
-        row_y += row_height
-
     print("Updating display...")
-    graphics.update()
+    screen.render_weather(weather, LOCATION_NAME, UTC_OFFSET_HOURS)
     print("Done")
 
 
@@ -419,28 +274,30 @@ def _safe_render():
 # Boot + main loop
 # ---------------------------------------------------------------------------
 
-
 def main():
     global _last_render_ticks_ms
 
     print("Booting Inky Frame Weather...")
     _mount_sd()
 
-    if not connect_wifi():
-        graphics.set_pen(WHITE)
-        graphics.clear()
-        graphics.set_pen(BLACK)
-        graphics.set_font("bitmap8")
-        graphics.text("WiFi Connection Failed", 100, 200, scale=3)
-        graphics.text("Check credentials in secrets.py", 100, 240, scale=2)
-        graphics.update()
-        # Sit here polling nothing useful; with no WiFi the webserver can't
-        # start either. machine.reset() would just loop, so wait and retry.
+    # Retry a few times - the CYW43 is flaky right after a hard reset and
+    # often needs a second attempt before it associates cleanly.
+    connected = False
+    for attempt in range(3):
+        if connect_wifi():
+            connected = True
+            break
+        print(f"WiFi attempt {attempt + 1} failed, retrying in 5s...")
+        time.sleep(5)
+
+    if not connected:
+        screen.render_error("WiFi Connection Failed",
+                            "Check credentials in secrets.py")
+        # Without WiFi we can't run the webserver or fetch weather; sleep and try a fresh boot
         time.sleep(300)
         machine.reset()
 
-    # Start the webserver before NTP / weather fetch so push.py can always
-    # reach us even if a later step throws.
+    # Start the webserver before NTP / weather fetch so push.py can always reach us even if a later step throws
     _register_routes()
     webserver.start()
 

@@ -68,7 +68,7 @@ SLEEP_INTERVAL_MINUTES = 60  # minutes between fetch + render cycles
 
 ### 4. Upload to Inky Frame
 
-Bootstrap once over USB (with Thonny or `mpremote`): copy `main.py`, `webserver.py`, `dashboard.py`, `ascii.py`, `weather_utils.py`, `config.py`, and `secrets.py` to the device.
+Bootstrap once over USB (with Thonny or `mpremote`): copy `main.py`, `webserver.py`, `dashboard.py`, `screen.py`, `ascii.py`, `weather_utils.py`, `config.py`, and `secrets.py` to the device.
 
 `main.py` is the single entry point — it installs the log capture, mounts the SD card, connects to WiFi, starts the status webserver, then enters the fetch/render loop.
 
