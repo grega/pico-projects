@@ -44,8 +44,8 @@ pip install -r requirements.txt
 
 Configuration is split into two files:
 
-- `secrets.py` — WiFi credentials only. Never pushed over the network.
-- `config.py` — per-device settings (location, refresh interval). Round-tripped via `push.py`.
+- `secrets.py` - WiFi credentials only. Never pushed over the network.
+- `config.py` - per-device settings (location, refresh interval). Round-tripped via `push.py`.
 
 Create `secrets.py` on the Inky Frame's Pico:
 
@@ -70,13 +70,13 @@ SLEEP_INTERVAL_MINUTES = 60  # minutes between fetch + render cycles
 
 Bootstrap once over USB (with Thonny or `mpremote`): copy `main.py`, `webserver.py`, `dashboard.py`, `screen.py`, `ascii.py`, `weather_utils.py`, `config.py`, and `secrets.py` to the device.
 
-`main.py` is the single entry point — it installs the log capture, mounts the SD card, connects to WiFi, starts the status webserver, then enters the fetch/render loop.
+`main.py` is the single entry point - it installs the log capture, mounts the SD card, connects to WiFi, starts the status webserver, then enters the fetch/render loop.
 
-After the first boot, all subsequent code/config changes can be pushed over WiFi using [`push.py`](./push.py) (see below) — no need to re-plug USB.
+After the first boot, all subsequent code/config changes can be pushed over WiFi using [`push.py`](./push.py) (see below) - no need to re-plug USB.
 
 ## Pushing updates
 
-[`push.py`](./push.py) is a small dev-side script that POSTs files to the device's webserver and triggers a reboot. The device's IP is printed on boot — write it to `.push_host` (one line) so `push.py` finds it automatically. (Or pass `--host <ip>`, or set the `INKY_HOST` env var.)
+[`push.py`](./push.py) is a small dev-side script that POSTs files to the device's webserver and triggers a reboot. The device's IP is printed on boot - write it to `.push_host` (one line) so `push.py` finds it automatically. (Or pass `--host <ip>`, or set the `INKY_HOST` env var.)
 
 ```bash
 echo "192.168.1.42" > .push_host
@@ -89,7 +89,7 @@ echo "192.168.1.42" > .push_host
 ./push.py reboot                              # just reboot
 ```
 
-`secrets.py` is intentionally not pushable — credentials are bootstrapped once over USB and never traverse the LAN.
+`secrets.py` is intentionally not pushable - credentials are bootstrapped once over USB and never traverse the LAN.
 
 ## Status dashboard
 
@@ -107,7 +107,7 @@ curl http://<device-ip>/status | jq
 curl http://<device-ip>/logs
 ```
 
-> The webserver pauses briefly (~30 s) during each e-ink redraw — refreshes will hang until the render completes, then resume.
+> The webserver pauses briefly (~30 s) during each e-ink redraw - refreshes will hang until the render completes, then resume.
 
 ## ASCII Output
 
