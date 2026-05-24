@@ -252,34 +252,67 @@ def _safe_render():
 # Boot + main loop
 # ---------------------------------------------------------------------------
 
-def main():
-    global _last_render_ticks_ms
+def _reset_cause_name():
+    """Translate machine.reset_cause() into a human-readable string. Available
+    constants vary across MicroPython builds; we probe defensively."""
+    try:
+        cause = machine.reset_cause()
+    except Exception:
+        return "unknown"
+    names = {}
+    for attr in ("PWRON_RESET", "HARD_RESET", "WDT_RESET",
+                 "DEEPSLEEP_RESET", "SOFT_RESET", "BROWNOUT_RESET"):
+        if hasattr(machine, attr):
+            names[getattr(machine, attr)] = attr
+    return names.get(cause, "unknown ({})".format(cause))
 
-    print("Booting Inky Frame Weather...")
-    _mount_sd()
 
-    # Connect to WiFi, retrying forever with exponential backoff. Without WiFi
-    # we can't start the webserver (no IP to bind to), so /logs is unreachable
-    # in this state - that's why logs are mirrored to SD: a card pulled and
-    # read on a laptop is the user's escape hatch when the device is offline.
-    # The error screen is drawn exactly once: e-ink refresh takes ~30s,
-    # longer than the early retry intervals, so re-rendering would block
-    # recovery from a transient hiccup.
+def _ensure_wifi(show_error_screen=True):
+    """Block until WiFi is connected, retrying forever with exponential backoff.
+
+    Used at boot (where we want the error screen so a wall-mounted device
+    shows *something* useful) and for mid-run drop recovery (where we DON'T
+    want to clobber the weather display - a transient drop shouldn't burn a
+    30 s e-ink refresh on an error screen that'll be replaced moments later).
+    """
     backoff_s = 10
     attempts = 0
     while True:
         if connect_wifi():
             if attempts > 0:
                 print(f"WiFi recovered after {attempts + 1} attempts")
-            break
+            return
         attempts += 1
-        if attempts == 1:
-            print("Initial WiFi connect failed - entering retry loop")
+        if attempts == 1 and show_error_screen:
+            print("WiFi connect failed - entering retry loop")
             screen.render_error("WiFi Connection Failed",
                                 "Retrying - logs on SD: /sd/logs/")
         print(f"WiFi attempt {attempts} failed; next retry in {backoff_s}s")
         time.sleep(backoff_s)
         backoff_s = min(backoff_s * 2, 300)  # cap at 5 min between attempts
+
+
+def _check_wifi_still_up():
+    """Cheap mid-loop probe; if WiFi dropped, block on a fresh connect-retry
+    loop. The webserver is unreachable anyway while we're disconnected, so
+    pausing the main loop here doesn't make anything worse."""
+    wlan = network.WLAN(network.STA_IF)
+    if not wlan.isconnected():
+        print("WiFi disconnected mid-run - reconnecting")
+        _ensure_wifi(show_error_screen=False)
+
+
+def main():
+    global _last_render_ticks_ms
+
+    print(f"Booting Inky Frame Weather... (reset cause: {_reset_cause_name()})")
+    _mount_sd()
+
+    # See _ensure_wifi docstring for why we retry forever rather than reset.
+    # Without WiFi the webserver can't bind a socket, so /logs is unreachable
+    # in this state - SD logs (pulled from the card, or downloaded via the
+    # browser once we recover) are the user's escape hatch.
+    _ensure_wifi(show_error_screen=True)
 
     # Start the webserver before NTP / weather fetch so push.py can always reach us even if a later step throws
     _register_routes()
@@ -294,6 +327,8 @@ def main():
         print(f"Failed to sync NTP time: {e}")
 
     while True:
+        _check_wifi_still_up()
+
         now = time.ticks_ms()
         if _last_render_ticks_ms is None or \
                 time.ticks_diff(now, _last_render_ticks_ms) >= REFRESH_INTERVAL_MS:

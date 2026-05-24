@@ -90,9 +90,13 @@ def attach_sd(log_dir):
 
 
 def mark_ntp_synced():
-    """Tell the logger to switch from boot-relative to wall-clock timestamps."""
+    """Switch from boot-relative to wall-clock timestamps, and write an anchor
+    line so prior [+seconds] entries can be correlated to real time after
+    the fact. The anchor's own timestamp will already be wall-clock since
+    `_ntp_synced` is set before we print."""
     global _ntp_synced
     _ntp_synced = True
+    print("--- NTP synced ---")
 
 
 def get_logs():
