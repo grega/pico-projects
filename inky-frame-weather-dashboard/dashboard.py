@@ -155,6 +155,7 @@ def _render_footer():
         '<footer class="dashboard-footer">'
         '<a href="/status">/status (JSON)</a>'
         '<a href="/logs">/logs</a>'
+        '<a href="/logs?download=1">download log</a>'
         '<a href="/ascii">/ascii</a>'
         '<a href="/config">/config</a>'
         f'<button type="button" class="secondary outline" onclick="{_REBOOT_JS}">Reboot</button>'

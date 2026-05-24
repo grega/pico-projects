@@ -138,8 +138,15 @@ def _handle(conn):
     if not result:
         return
 
-    status, content_type, response_body = result
-    _send(conn, status, content_type, response_body)
+    # Handlers may return either (status, content_type, body) or a 4-tuple
+    # (status, content_type, body, extra_headers_dict) for cases like
+    # Content-Disposition that don't fit the basic signature.
+    if len(result) == 4:
+        status, content_type, response_body, extra_headers = result
+    else:
+        status, content_type, response_body = result
+        extra_headers = None
+    _send(conn, status, content_type, response_body, extra_headers)
 
 
 def _parse_headers(block):
@@ -152,17 +159,21 @@ def _parse_headers(block):
     return headers
 
 
-def _send(conn, status, content_type, body):
+def _send(conn, status, content_type, body, extra_headers=None):
     if isinstance(body, str):
         body = body.encode()
     status_text = {200: "OK", 400: "Bad Request", 404: "Not Found",
                    413: "Payload Too Large", 500: "Internal Server Error"}.get(status, "")
-    header = (
-        f"HTTP/1.0 {status} {status_text}\r\n"
-        f"Content-Type: {content_type}\r\n"
-        f"Content-Length: {len(body)}\r\n"
-        f"Connection: close\r\n\r\n"
-    ).encode()
+    lines = [
+        f"HTTP/1.0 {status} {status_text}",
+        f"Content-Type: {content_type}",
+        f"Content-Length: {len(body)}",
+        "Connection: close",
+    ]
+    if extra_headers:
+        for name, value in extra_headers.items():
+            lines.append(f"{name}: {value}")
+    header = ("\r\n".join(lines) + "\r\n\r\n").encode()
     conn.sendall(header + body)
 
 

@@ -68,7 +68,7 @@ SLEEP_INTERVAL_MINUTES = 60  # minutes between fetch + render cycles
 
 ### 4. Upload to Inky Frame
 
-Bootstrap once over USB (with Thonny or `mpremote`): copy `main.py`, `webserver.py`, `dashboard.py`, `screen.py`, `ascii.py`, `weather_utils.py`, `config.py`, and `secrets.py` to the device.
+Bootstrap once over USB (with Thonny or `mpremote`): copy `main.py`, `webserver.py`, `dashboard.py`, `screen.py`, `logger.py`, `ascii.py`, `weather_utils.py`, `config.py`, and `secrets.py` to the device.
 
 `main.py` is the single entry point - it installs the log capture, mounts the SD card, connects to WiFi, starts the status webserver, then enters the fetch/render loop.
 
@@ -97,7 +97,7 @@ While the device is running, point a browser at `http://<device-ip>/` for a live
 
 - **Device**: IP, local time, uptime, WiFi RSSI, free heap.
 - **Weather fetch**: location, last fetch age + status, next refresh ETA.
-- Footer links: `/status` (JSON snapshot), `/logs` (4 KB RAM ring buffer of all `print()` output), `/ascii` (ASCII render of the latest weather), `/config` (current `config.py` source).
+- Footer links: `/status` (JSON snapshot), `/logs` (rotating log on SD, 4 KB RAM fallback), `/logs?download=1` (save as `device.log`), `/ascii` (ASCII render of the latest weather), `/config` (current `config.py` source).
 - Reboot button (POSTs to `/reboot`).
 
 Useful for `curl`:
@@ -108,6 +108,10 @@ curl http://<device-ip>/logs
 ```
 
 > The webserver pauses briefly (~30 s) during each e-ink redraw - refreshes will hang until the render completes, then resume.
+
+### Logs
+
+Every `print()` is mirrored to `/sd/logs/current.log` (rotating to `previous.log` at 64 KB, so SD usage stays bounded at ~128 KB). Logs survive reboots, so if the device fails mid-boot you can either pull the card or hit `/logs?download=1` after recovery to see what happened. Lines before the NTP sync are timestamped with seconds since boot (`[+12.345s]`); wall-clock timestamps thereafter.
 
 ## ASCII Output
 

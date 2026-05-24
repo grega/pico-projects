@@ -65,22 +65,45 @@ def weather_url(lat, lon):
     # used to print the URL in main.py for debugging
     return f"https://api.met.no/weatherapi/locationforecast/2.0/compact?lat={lat}&lon={lon}"
 
-def fetch_weather(lat, lon):
-    url = f"https://api.met.no/weatherapi/locationforecast/2.0/compact?lat={lat}&lon={lon}"
+def fetch_weather(lat, lon, max_attempts=3, retry_delay_s=5):
+    """Fetch + parse JSON from the YR API. Retries on transient failure
+    (network errors, non-200 responses, JSON parse failures). Each attempt
+    logs enough context to diagnose what went wrong."""
+    url = weather_url(lat, lon)
     headers = {"User-Agent": "InkyFrameWeather/1.0"}
 
-    try:
-        # `requests` (Python) is a little different to `urequests` (MicroPython) 
-        # for use when testing with non-MicroPython (ie. using the ascii.py script)
-        response = requests.get(url, headers=headers)
-        data = response.json()
-        # urequests (MicroPython) requires explicit close(), requests (Python) doesn't need it
-        if hasattr(response, "close"):
-            response.close()
-        return data
-    except Exception as e:
-        print(f"Error fetching weather: {e}")
-        return None
+    for attempt in range(1, max_attempts + 1):
+        response = None
+        try:
+            print(f"fetch_weather: attempt {attempt}/{max_attempts} GET {url}")
+            response = requests.get(url, headers=headers)
+            status = getattr(response, "status_code", None)
+            if status != 200:
+                # YR returns 203 for deprecated endpoints, 429 for rate limits,
+                # 5xx for outages - log so we can tell them apart on next reboot.
+                body_peek = ""
+                try:
+                    body_peek = response.text[:200]
+                except Exception:
+                    pass
+                print(f"fetch_weather: HTTP {status} (body: {body_peek!r})")
+            else:
+                data = response.json()
+                print(f"fetch_weather: ok, {len(str(data))} chars of JSON")
+                return data
+        except Exception as e:
+            print(f"fetch_weather: attempt {attempt} raised {type(e).__name__}: {e}")
+        finally:
+            if response is not None:
+                try:
+                    response.close()
+                except Exception:
+                    pass
+        if attempt < max_attempts:
+            time.sleep(retry_delay_s)
+
+    print(f"fetch_weather: giving up after {max_attempts} attempts")
+    return None
 
 def get_icon_filename(symbol_code):
     """Return the path to the icon jpg for a given symbol code."""
@@ -148,11 +171,16 @@ def wind_direction_to_compass(degrees):
 
 def parse_weather(data, utc_offset_hours):
     # extract current weather conditions from the first timeseries entry
-    if not data or 'properties' not in data:
+    if not data:
+        print("parse_weather: data is None/empty")
+        return None
+    if 'properties' not in data:
+        print(f"parse_weather: no 'properties' key (top-level keys: {list(data.keys())})")
         return None
 
-    timeseries = data['properties']['timeseries']
+    timeseries = data['properties'].get('timeseries')
     if not timeseries:
+        print("parse_weather: properties.timeseries is empty/missing")
         return None
 
     current = timeseries[0]

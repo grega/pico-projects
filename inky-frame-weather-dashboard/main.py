@@ -1,4 +1,3 @@
-import builtins
 import gc
 import json
 import machine
@@ -10,49 +9,15 @@ import time
 
 import ascii
 import dashboard
+import logger
 import screen
 import webserver
 from config import LOCATION_NAME, LATITUDE, LONGITUDE, UTC_OFFSET_HOURS, SLEEP_INTERVAL_MINUTES
 from weather_utils import connect_wifi, fetch_weather, weather_url, parse_weather
 
-# ---------------------------------------------------------------------------
-# In-memory log ring buffer + print() monkey-patch
-# ---------------------------------------------------------------------------
-
-_LOG_BUFFER_BYTES = 4096
-
-
-class _LogBuffer:
-    def __init__(self, size):
-        self.buf = bytearray()
-        self.size = size
-
-    def write(self, data):
-        self.buf.extend(data)
-        overflow = len(self.buf) - self.size
-        if overflow > 0:
-            del self.buf[:overflow]
-
-
-_log_buffer = _LogBuffer(_LOG_BUFFER_BYTES)
-
-
-def _install_log_capture():
-    original_print = builtins.print
-
-    def _captured_print(*args, **kwargs):
-        sep = kwargs.get("sep", " ")
-        end = kwargs.get("end", "\n")
-        try:
-            _log_buffer.write((sep.join(str(a) for a in args) + end).encode())
-        except Exception:
-            pass
-        return original_print(*args, **kwargs)
-
-    builtins.print = _captured_print
-
-
-_install_log_capture()
+# Install log capture as the very first thing we do so every subsequent print()
+# is recorded - both in the RAM ring and (once SD is attached) on disk.
+logger.install()
 
 # ---------------------------------------------------------------------------
 # State exposed to /status
@@ -158,7 +123,12 @@ def _handle_status(body, query):
 
 
 def _handle_logs(body, query):
-    return (200, "text/plain; charset=utf-8", bytes(_log_buffer.buf))
+    payload = logger.get_logs()
+    if "download=1" in query:
+        # Trigger "Save as..." in the browser instead of inline display.
+        return (200, "text/plain; charset=utf-8", payload,
+                {"Content-Disposition": "attachment; filename=device.log"})
+    return (200, "text/plain; charset=utf-8", payload)
 
 
 def _handle_ascii(body, query):
@@ -229,6 +199,9 @@ def _mount_sd():
         sd = sdcard.SDCard(spi, cs)
         os.mount(sd, "/sd")
         print("SD card mounted successfully at /sd")
+        # Attach the on-disk log file now that /sd is writeable. Any pre-mount
+        # log lines captured in the RAM ring will be flushed to the file.
+        logger.attach_sd("/sd/logs")
     except Exception as e:
         print(f"Failed to mount SD card: {e}")
 
@@ -239,15 +212,20 @@ def _render_weather():
 
     _last_fetch_ticks_ms = time.ticks_ms()
 
-    print(f"Fetching weather from {weather_url(LATITUDE, LONGITUDE)}")
-    weather = parse_weather(fetch_weather(LATITUDE, LONGITUDE), UTC_OFFSET_HOURS)
+    raw = fetch_weather(LATITUDE, LONGITUDE)
+    if raw is None:
+        _last_fetch_ok = False
+        _last_fetch_error = "API fetch failed (see /logs)"
+        screen.render_error("Weather fetch failed",
+                            "API unreachable - check /logs")
+        return
 
+    weather = parse_weather(raw, UTC_OFFSET_HOURS)
     if not weather:
         _last_fetch_ok = False
-        _last_fetch_error = "weather fetch/parse failed"
-        print("Failed to fetch weather data")
-        screen.render_error("Fetching weather data failed",
-                            "Check your internet connection")
+        _last_fetch_error = "API returned unexpected data (see /logs)"
+        screen.render_error("Weather parse failed",
+                            "Unexpected API response - check /logs")
         return
 
     _last_fetch_ok = True
@@ -267,7 +245,7 @@ def _safe_render():
     except Exception as e:
         _last_fetch_ok = False
         _last_fetch_error = f"{type(e).__name__}: {e}"
-        print(f"Render failed: {_last_fetch_error}")
+        logger.log_exception(e, label="Render failed")
 
 
 # ---------------------------------------------------------------------------
@@ -280,22 +258,28 @@ def main():
     print("Booting Inky Frame Weather...")
     _mount_sd()
 
-    # Retry a few times - the CYW43 is flaky right after a hard reset and
-    # often needs a second attempt before it associates cleanly.
-    connected = False
-    for attempt in range(3):
+    # Connect to WiFi, retrying forever with exponential backoff. Without WiFi
+    # we can't start the webserver (no IP to bind to), so /logs is unreachable
+    # in this state - that's why logs are mirrored to SD: a card pulled and
+    # read on a laptop is the user's escape hatch when the device is offline.
+    # The error screen is drawn exactly once: e-ink refresh takes ~30s,
+    # longer than the early retry intervals, so re-rendering would block
+    # recovery from a transient hiccup.
+    backoff_s = 10
+    attempts = 0
+    while True:
         if connect_wifi():
-            connected = True
+            if attempts > 0:
+                print(f"WiFi recovered after {attempts + 1} attempts")
             break
-        print(f"WiFi attempt {attempt + 1} failed, retrying in 5s...")
-        time.sleep(5)
-
-    if not connected:
-        screen.render_error("WiFi Connection Failed",
-                            "Check credentials in secrets.py")
-        # Without WiFi we can't run the webserver or fetch weather; sleep and try a fresh boot
-        time.sleep(300)
-        machine.reset()
+        attempts += 1
+        if attempts == 1:
+            print("Initial WiFi connect failed - entering retry loop")
+            screen.render_error("WiFi Connection Failed",
+                                "Retrying - logs on SD: /sd/logs/")
+        print(f"WiFi attempt {attempts} failed; next retry in {backoff_s}s")
+        time.sleep(backoff_s)
+        backoff_s = min(backoff_s * 2, 300)  # cap at 5 min between attempts
 
     # Start the webserver before NTP / weather fetch so push.py can always reach us even if a later step throws
     _register_routes()
@@ -305,6 +289,7 @@ def main():
         print("Syncing time via NTP...")
         ntptime.settime()
         print("Time updated successfully.")
+        logger.mark_ntp_synced()
     except Exception as e:
         print(f"Failed to sync NTP time: {e}")
 
