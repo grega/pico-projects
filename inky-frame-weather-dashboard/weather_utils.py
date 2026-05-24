@@ -15,7 +15,7 @@ def connect_wifi(max_wait=30):
     if network is None:
         print("Error: network module not available (MicroPython only)")
         return False
-    
+
     try:
         from secrets import WIFI_SSID, WIFI_PASSWORD
     except ImportError:
@@ -23,15 +23,32 @@ def connect_wifi(max_wait=30):
         return False
 
     wlan = network.WLAN(network.STA_IF)
+
+    # Soft reboot fast path: if the chip is still associated from the previous
+    # run, just reuse the connection. Tearing it down only to re-establish it
+    # is the root cause of the "first attempt fails" pattern - the CYW43 hates
+    # being asked to reconnect to an AP it's still associated with. Every
+    # push.py cycle soft-reboots us, so this matters.
+    try:
+        if wlan.isconnected() and wlan.status() == network.STAT_GOT_IP:
+            print(f"Reusing existing WiFi connection: {wlan.ifconfig()[0]}")
+            return True
+    except Exception:
+        pass
+
+    # Cold boot path. The 2s delay after active(True) is essential - CYW43
+    # returns from active(True) before the radio is actually ready, so an
+    # immediate connect() will time out.
     wlan.active(True)
-    
-    if wlan.isconnected():
-        print("Already connected to WiFi")
-        return True
+    time.sleep(2)
+    try:
+        wlan.config(pm=0xa11140)  # disable WiFi power saving for slow APs
+    except Exception:
+        pass
 
     print(f"Connecting to WiFi: {WIFI_SSID}")
     wlan.connect(WIFI_SSID, WIFI_PASSWORD)
-    
+
     while max_wait > 0:
         if wlan.isconnected():
             print("Connected to WiFi")
@@ -40,7 +57,7 @@ def connect_wifi(max_wait=30):
         time.sleep(1)
         max_wait -= 1
         print(".", end="")
-    
+
     print("\nFailed to connect to WiFi")
     return False
 

@@ -17,8 +17,8 @@ See the YR docs on how to generate a card view URL for your location: https://de
 - [Pimoroni Inky Frame 7.3"](https://shop.pimoroni.com/products/inky-frame-7-3?variant=40541882056787) (Spectra 6 display)
 - MicroSD card
 - WiFi connection
-- Either a power connector or battery pack (see Pimoroni's [Inky Frame "getting started" page](https://learn.pimoroni.com/article/getting-started-with-inky-frame) for more info)
-  
+- USB power (this version keeps the CPU awake to serve the status webserver; battery operation is not supported)
+
 The snap-on case was sourced from [MakerWorld](https://makerworld.com/en/models/210940-inky-frame-7-3-clean-cover-snap-on-easy-print#profileId-230780) and printed using PLA.
 
 ## Setup Instructions
@@ -42,51 +42,78 @@ pip install -r requirements.txt
 
 ### 3. Configure
 
-Create or edit `secrets.py` on the Inky Frame's Pico and fill in the configuration options:
+Configuration is split into two files:
+
+- `secrets.py` — WiFi credentials only. Never pushed over the network.
+- `config.py` — per-device settings (location, refresh interval). Round-tripped via `push.py`.
+
+Create `secrets.py` on the Inky Frame's Pico:
 
 ```python
-# secrets.py - Configuration file
-
-# WiFi configuration
+# secrets.py - WiFi credentials only
 WIFI_SSID = "your-wifi-ssid"
 WIFI_PASSWORD = "your-wifi-password"
+```
 
-# Location configuration
+And `config.py`:
+
+```python
+# config.py - Per-device runtime configuration
 LOCATION_NAME = "Location name"
-LATITUDE  = 00.0000 # max 4 decimal places
-LONGITUDE = 00.0000 # max 4 decimal places
-
-# Time configuration
-UTC_OFFSET_HOURS = 0 # eg. for BST use 1, for CEST use 2
-SLEEP_INTERVAL_MINUTES = 60 # time in minutes between data / display updates
-
-# Update configuration
-ENABLE_AUTO_UPDATE = True # set to True to enable automatic updates from GitHub (default: False/disabled)
+LATITUDE  = 00.0000  # max 4 decimal places
+LONGITUDE = 00.0000  # max 4 decimal places
+UTC_OFFSET_HOURS = 0  # eg. for BST use 1, for CEST use 2
+SLEEP_INTERVAL_MINUTES = 60  # minutes between fetch + render cycles
 ```
 
 ### 4. Upload to Inky Frame
 
-1. Copy the `main.py`, `weather_utils.py`, `update.py` and `app.py` files to the Inky Frame
-2. `main.py` runs first on boot, then `app.py` will be run automatically
-3. `update.py` will be used to update the files from GitHub (set `ENABLE_AUTO_UPDATE = False` in `secrets.py` if testing / modifying code on the device itself)
+Bootstrap once over USB (with Thonny or `mpremote`): copy `main.py`, `webserver.py`, `dashboard.py`, `ascii.py`, `weather_utils.py`, `config.py`, and `secrets.py` to the device.
+
+`main.py` is the single entry point — it installs the log capture, mounts the SD card, connects to WiFi, starts the status webserver, then enters the fetch/render loop.
+
+After the first boot, all subsequent code/config changes can be pushed over WiFi using [`push.py`](./push.py) (see below) — no need to re-plug USB.
+
+## Pushing updates
+
+[`push.py`](./push.py) is a small dev-side script that POSTs files to the device's webserver and triggers a reboot. The device's IP is printed on boot — write it to `.push_host` (one line) so `push.py` finds it automatically. (Or pass `--host <ip>`, or set the `INKY_HOST` env var.)
+
+```bash
+echo "192.168.1.42" > .push_host
+
+./push.py code                                # push main.py and reboot
+./push.py file dashboard.py                   # push any .py file and reboot
+./push.py file webserver.py dashboard.py      # push multiple files, reboot once at the end
+./push.py config fetch                        # download device config.py into _device/config.py
+./push.py config push                         # upload _device/config.py and reboot
+./push.py reboot                              # just reboot
+```
+
+`secrets.py` is intentionally not pushable — credentials are bootstrapped once over USB and never traverse the LAN.
+
+## Status dashboard
+
+While the device is running, point a browser at `http://<device-ip>/` for a live status page (auto-refreshes every 5s):
+
+- **Device**: IP, local time, uptime, WiFi RSSI, free heap.
+- **Weather fetch**: location, last fetch age + status, next refresh ETA.
+- Footer links: `/status` (JSON snapshot), `/logs` (4 KB RAM ring buffer of all `print()` output), `/ascii` (ASCII render of the latest weather), `/config` (current `config.py` source).
+- Reboot button (POSTs to `/reboot`).
+
+Useful for `curl`:
+
+```bash
+curl http://<device-ip>/status | jq
+curl http://<device-ip>/logs
+```
+
+> The webserver pauses briefly (~30 s) during each e-ink redraw — refreshes will hang until the render completes, then resume.
 
 ## ASCII Output
 
 The code can also be run in a standard Python environment (ie. not on the Inky Frame) to see the weather data printed in ASCII format in the console, this is pretty handy for testing without having to plug in the device / wait for the display to refresh for each change.
 
-Create a `secrets.py` file configured with location details:
-
-```python
-# secrets.py - Configuration file
-
-# Location configuration
-LOCATION_NAME = "Location name"
-LATITUDE  = xx.xxxx # max 4 decimal places
-LONGITUDE = -xx.xxxx # max 4 decimal places
-
-# Time configuration
-UTC_OFFSET_HOURS = 0 # eg. for BST use 1, for CEST use 2
-```
+`ascii.py` reads `LOCATION_NAME`, `LATITUDE`, `LONGITUDE`, and `UTC_OFFSET_HOURS` from `config.py` (the same file pushed to the device). No `secrets.py` is needed for the ASCII harness.
 
 Then run:
 
@@ -117,33 +144,6 @@ Time       Temp    Icon                      Precip   Wind
 06-12      2°C     wi-cloudy.jpg             0.1 mm   3 m/s
 ================================================================================
 ```
-
-## Self-update and fallback
-
-The device can update `app.py` and `weather_utils.py` from GitHub. Auto-updates are disabled by default and can be enabled by setting `ENABLE_AUTO_UPDATE = True` in `secrets.py` (when testing or modifying code directly on the device be sure to keep it disabled).
-
-To prevent bricking due to broken updates, it uses a rollback system:
-
-1. Updating files
-   - Each file is backed up as `file.prev` before replacement when updates are fetched from GitHub.
-   - Updates happen at the start of each cycle (if `ENABLE_AUTO_UPDATE = True`).
-
-2. Boot sequence
-   - `main.py` runs first on every boot
-   - It checks the consecutive failure count (written to a file)
-   - If failures >= 3, it automatically rolls back all files to their `.prev` versions before `app.py` runs
-   - This ensures rollback works even if `app.py` has syntax errors or can't import
-
-3. Failure tracking
-   - After the main loop completes successfully, `mark_boot_success()` resets the failure count to 0
-   - If the main loop fails or `app.py` can't be imported, `mark_boot_failure()` increments the failure count
-
-This means that:
-
-- Rollback happens before `app.py` runs (through `main.py`), so even completely broken `app.py` files can be recovered
-- After 3 consecutive boot failures, the device automatically rolls back to the previous working version
-
-The update occurs during each cycle (eg. every hour, when the device wakes from sleep / refreshes), though can be forced by power-cycling the device.
 
 ## License
 

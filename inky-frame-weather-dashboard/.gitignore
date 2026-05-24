@@ -4,3 +4,12 @@ secrets.py
 .DS_Store
 __pycache__/
 .pytest_cache/
+
+# push.py state
+_device/
+.push_host
+
+# Defensive: leftovers from the old auto-update/rollback system
+failure_count.txt
+*.prev
+*.bad
