@@ -61,6 +61,33 @@ def connect_wifi(max_wait=30):
     print("\nFailed to connect to WiFi")
     return False
 
+def reconnect_wifi(max_wait=30):
+    """Force a full WiFi teardown + reconnect to refresh the DHCP/DNS lease.
+
+    `connect_wifi()` deliberately *reuses* an existing association as a fast
+    path. That's the wrong move when we're associated-but-the-link-is-dead
+    (the classic "OSError: -2" DNS failure where isconnected() still reports
+    True) - reusing the dead association just fails again. Here we disconnect
+    and deactivate the radio first so connect_wifi() is forced down its cold
+    -boot path and lwIP picks up a fresh DNS server from DHCP."""
+    if network is None:
+        print("Error: network module not available (MicroPython only)")
+        return False
+
+    wlan = network.WLAN(network.STA_IF)
+    print("reconnect_wifi: tearing down existing WiFi link")
+    try:
+        wlan.disconnect()
+    except Exception:
+        pass
+    try:
+        wlan.active(False)
+    except Exception:
+        pass
+    time.sleep(2)
+    return connect_wifi(max_wait=max_wait)
+
+
 def weather_url(lat, lon):
     # used to print the URL in main.py for debugging
     return f"https://api.met.no/weatherapi/locationforecast/2.0/compact?lat={lat}&lon={lon}"

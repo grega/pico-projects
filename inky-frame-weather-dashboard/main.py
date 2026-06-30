@@ -13,7 +13,7 @@ import logger
 import screen
 import webserver
 from config import LOCATION_NAME, LATITUDE, LONGITUDE, UTC_OFFSET_HOURS, SLEEP_INTERVAL_MINUTES
-from weather_utils import connect_wifi, fetch_weather, weather_url, parse_weather
+from weather_utils import connect_wifi, reconnect_wifi, fetch_weather, weather_url, parse_weather
 
 # Install log capture as the very first thing we do so every subsequent print()
 # is recorded - both in the RAM ring and (once SD is attached) on disk.
@@ -214,6 +214,14 @@ def _render_weather():
 
     raw = fetch_weather(LATITUDE, LONGITUDE)
     if raw is None:
+        # A None here is usually a DNS failure on an "associated", but dead, link (OSError -2)
+        # isconnected() still reports True, so _check_wifi_still_up() never fires
+        # Force a full reconnect to refresh the DHCP/DNS lease and make one more attempt before falling back to the error screen
+        print("Weather fetch failed - forcing WiFi reconnect and retrying once")
+        if reconnect_wifi():
+            raw = fetch_weather(LATITUDE, LONGITUDE)
+
+    if raw is None:
         _last_fetch_ok = False
         _last_fetch_error = "API fetch failed (see /logs)"
         screen.render_error("Weather fetch failed",
@@ -309,9 +317,8 @@ def main():
     _mount_sd()
 
     # See _ensure_wifi docstring for why we retry forever rather than reset.
-    # Without WiFi the webserver can't bind a socket, so /logs is unreachable
-    # in this state - SD logs (pulled from the card, or downloaded via the
-    # browser once we recover) are the user's escape hatch.
+    # Without WiFi the webserver can't bind a socket, so /logs is unreachable in this state
+    # SD logs (pulled from the card, or downloaded via the browser once we recover) can be used to diagnose the failure
     _ensure_wifi(show_error_screen=True)
 
     # Start the webserver before NTP / weather fetch so push.py can always reach us even if a later step throws
